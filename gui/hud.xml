@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nifty xmlns="http://nifty-gui.sourceforge.net/nifty-1.3.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://nifty-gui.sourceforge.net/nifty-1.3.xsd http://nifty-gui.sourceforge.net/nifty-1.3.xsd">
+
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <!-- load default styles and controls -->
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <useStyles filename="nifty-default-styles.xml" />
+  <useControls filename="nifty-default-controls.xml" />
+
+
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <!-- start screen -->
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <screen id="hud" controller="createacity.gui.HUDScreen">
+    <layer id="layer" childLayout="vertical">
+      <panel childLayout="absolute">   
+      <control name="label" id="currentTime" size="5" width="50%" height="100%" text="" align="left" VAlign="bottom" textHAlign="left" textVAlign="bottom" />
+      <control name="label" id="currentSpeedKPH" size="5" width="100%" height="100%" text="" align="center" VAlign="bottom" textHAlign="center" textVAlign="bottom" />
+      <control name="label" id="currentStreet" width="100%" height="100%" color="#007F46" text="" align="right" VAlign="bottom" textHAlign="right" textVAlign="bottom" />
+      <control name="label" id="nextStreet" width="100%" height="97%" color="#FF9900" text="" align="right" VAlign="bottom" textHAlign="right" textVAlign="bottom" />
+      </panel>
+    </layer>  
+  </screen>
+</nifty>

@@ -1,0 +1,1 @@
+/** To change this template, choose Tools | Templates* and open the template in the editor.*/package createacity.drivetrain;/**** @author Joseph*/public interface Shifter {    public void gearUp();    public void gearDown();    public void setGear(String newGear);    public int getGearValue();    public String getGear();}
