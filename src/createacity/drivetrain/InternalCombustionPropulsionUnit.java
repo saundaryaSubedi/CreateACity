@@ -148,7 +148,7 @@ public class InternalCombustionPropulsionUnit extends PropulsionUnit{
             engineRPM = engine.getIdleRpm();
 
         //float Cdrag = .1f * .3f * 2.2f * 1.29f;
-        float Cdrag = .25f;
+        float Cdrag = .33f;
         float Crr = 0;
         FdragMag = Cdrag * (float)Math.pow(speed, 2);
         FrrMag = Crr * speed;
@@ -157,66 +157,61 @@ public class InternalCombustionPropulsionUnit extends PropulsionUnit{
         float radius = 0.2286f;
         Ftraction = (torque * gearRatio * 2.86f * .7f) / radius;
         Fbrake = 0;
-
-
-        if (shifter.getGear().equals("DRIVE")){ //in Drive
-            if (currentGear < 1)
-                currentGear = 1;
-            
-            
-            
-            /*if (direction == 1) {
-                
-            }
-          
-
-            if (throttleValue > 0){    
-                
+        switch (shifter.getGear()) {
+            case "DRIVE":
+                //in Drive
+                if (currentGear < 1) {
+                    currentGear = 1;
+                }
+                /*if (direction == 1) {
+                }
+                if (throttleValue > 0){
                 Fbrake = 0;
-
-            } else if (throttleValue < 0 && speed > .1f) {  
+                } else if (throttleValue < 0 && speed > .1f) {  
                 Fbrake = -3000;
                 Ftraction = 0;
-            } else if (throttleValue < 0){
+                } else if (throttleValue < 0){
                 Fbrake = 0;
                 Ftraction = 0;
-            } else if (throttleValue == 0){
+                } else if (throttleValue == 0){
                 Ftraction = Fbrake = 0;
-            }*/
-            
-            if (engineRPM >= engine.getShiftUpRpsLimit() * 60f && currentGear > 0)
-                gearUp();
-
-            if (engineRPM <= 60f * engine.getShiftDownRpsLimit() && currentGear > 1)
-                gearDown();
-
-        } else if (shifter.getGear().equals("REVERSE")) {
-            if (currentGear > 0)
-                currentGear = 0;
-            
-            Ftraction *= -1;
-
-            /*if (throttleValue > 0){    
+                }*/
+                if (engineRPM >= engine.getShiftUpRpsLimit() * 60f && currentGear > 0) {
+                    gearUp();
+                }
+                if (engineRPM <= 60f * engine.getShiftDownRpsLimit() && currentGear > 1) {
+                    gearDown();
+                }
+                break;
+            case "REVERSE":
+                if (currentGear > 0) {
+                    currentGear = 0;
+                }
                 Ftraction *= -1;
-                Fbrake = 0;
-            } else if (throttleValue < 0 && speed > .1f) {  
-                Fbrake = 3000;
-                Ftraction = 0;
-            } else if (throttleValue < 0){
-                Fbrake = 0;
-                Ftraction = 0;
-                //speed = 0;
-            } else if (throttleValue == 0){
-                Ftraction = Fbrake = 0;
-            }*/
 
-        } else if (shifter.getGear().equals("PARK")) {
-            engineRPM = gasValue * (engine.getMaxRpm() - engine.getIdleRpm()) + engine.getIdleRpm();
-            Ftraction = 0;
-            //Fbrake += -10000;
-        } else if (shifter.getGear().equals("NEUTRAL")) {
-            engineRPM = gasValue * (engine.getMaxRpm() - engine.getIdleRpm()) + engine.getIdleRpm();
-            Ftraction = 0;
+                /*if (throttleValue > 0){    
+                    Ftraction *= -1;
+                    Fbrake = 0;
+                } else if (throttleValue < 0 && speed > .1f) {  
+                    Fbrake = 3000;
+                    Ftraction = 0;
+                } else if (throttleValue < 0){
+                    Fbrake = 0;
+                    Ftraction = 0;
+                    //speed = 0;
+                } else if (throttleValue == 0){
+                    Ftraction = Fbrake = 0;
+                }*/
+                break;
+            case "PARK":
+                engineRPM = gasValue * (engine.getMaxRpm() - engine.getIdleRpm()) + engine.getIdleRpm();
+                Ftraction = 0;
+                //Fbrake += -10000;
+                break;
+            case "NEUTRAL":
+                engineRPM = gasValue * (engine.getMaxRpm() - engine.getIdleRpm()) + engine.getIdleRpm();
+                Ftraction = 0;
+                break;
         }
         
         //System.out.println(direction);

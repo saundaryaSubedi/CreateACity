@@ -13,6 +13,7 @@ import com.jme3.math.Vector3f;
 import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Node;
 import com.jme3.system.AppSettings;
+import createacity.CityApplication;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
@@ -40,17 +41,22 @@ public class AIVehicle {
         vehicle.getCombustionPropUnit().getShifter().setGear("DRIVE");
         this.rootNode = rootNode;
         this.worldNode = worldNode;
-        motionPaths = new LinkedList<MotionPath>();
+        motionPaths = new LinkedList<>();
         MotionPath path = new MotionPath();
-        path.addWayPoint(new Vector3f(100, 0, -112));
-        path.addWayPoint(new Vector3f(105, 0, -106));
-        path.addWayPoint(new Vector3f(108, 0, -98f));
-        path.enableDebugShape(assetManager, rootNode);
+        path.addWayPoint(new Vector3f(100, 0, -113));
+        path.addWayPoint(new Vector3f(109, 0, -112));
+        path.addWayPoint(new Vector3f(113, 0, -98f));
+        
         MotionPath path2 = new MotionPath();
         path2.addWayPoint(new Vector3f(-108, 0, -98f));
         path2.addWayPoint(new Vector3f(-107, 0, -110));
         path2.addWayPoint(new Vector3f(-97, 0, -112));
-        path2.enableDebugShape(assetManager, rootNode);
+        
+        if (CityApplication.DEBUG) {
+            path.enableDebugShape(assetManager, rootNode);
+            path2.enableDebugShape(assetManager, rootNode);
+        }
+        
         this.assetManager = assetManager;
         
         //path.addWayPoint(new Vector3f(110, 0, 0));
@@ -103,32 +109,35 @@ public class AIVehicle {
     
     private void checkPath(float tpf) {
         //System.err.println("Reorienting is " + needsReorienting);
-        if (motionPaths.size() > 0)
+        if (motionPaths.size() > 0) {
             checkIfOnPath();
+        }
         
         //System.out.println("currentMotionPath is " + currentMotionPath);
         
-        if (currentMotionPath == null)
+        if (currentMotionPath == null) {
             stayInMiddleOfCurrentLane(tpf);
+        }
         else {
             if (vehicle.getPlayer().getPhysicsLocation().distance(currentMotionPath.getWayPoint(0)) < 1f) {
                 currentMotionPath.removeWayPoint(0);
                 System.out.println("Removing waypoint");
                 
                 if (currentMotionPath.getNbWayPoints() == 0) {
+                    System.out.println("Finished waypoints");
                     currentMotionPath = null;
                     needsReorienting = true;
                 }
                 
             } else {
-                //System.out.println("Desired path: " + currentMotionPath.getWayPoint(0));
+                System.out.println("Desired path: " + currentMotionPath.getWayPoint(0));
                 Vector3f path = currentMotionPath.getWayPoint(0).subtract(vehicle.getPlayer().getPhysicsLocation());
                 Vector3f forward = vehicle.getPlayer().getForwardVector(null);
                 forward.normalizeLocal();
                 path.normalizeLocal();
             
                 Vector3f dir = path.subtract(forward);
-                steeringSensitivity = 1.5f;
+                steeringSensitivity = 20f;
                 //System.out.println(dir);
 
                 if (FastMath.abs(dir.getZ()) < .1f) {
@@ -136,11 +145,11 @@ public class AIVehicle {
                     //steeringSensitivity += .1f;
                     //vehicle.setSteeringValue(0);
                 } else if (dir.getZ() < 0) {
-                    //System.out.println("Steer left");
+                    System.out.println("Steer left");
                     //vehicle.setSteeringValue(vehicle.getSteeringValue() + (tpf / 100f) * FastMath.abs(dir.getZ() * 10f));
-                    vehicle.setSteeringValue(-steeringSensitivity * dir.getZ());
+                    vehicle.setSteeringValue(steeringSensitivity * dir.getZ());
                 } else if (dir.getZ() > 0) {
-                    //System.out.println("Steer right");
+                    System.out.println("Steer right");
                     //vehicle.setSteeringValue(vehicle.getSteeringValue() - (tpf / 100f) * FastMath.abs(dir.getZ() * 10f));
                     vehicle.setSteeringValue(-steeringSensitivity * dir.getZ());
                 }
@@ -238,7 +247,8 @@ public class AIVehicle {
             
             Vector3f cross = forwardVector.cross(laneVector);
             //System.out.println(currentRoadNode.getName() + " " + cross.getY());
-            steeringSensitivity = FastMath.abs(cross.getY());
+//            steeringSensitivity = FastMath.abs(cross.getY());
+            steeringSensitivity = 1f;
             if (FastMath.abs(cross.getY()) < .1f) {
                 //if (steeringSensitivity + .01f >= .01f)
                 //steeringSensitivity += .1f;

@@ -22,8 +22,9 @@ import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.niftygui.NiftyJmeDisplay;
 import com.jme3.system.AppSettings;
-import de.lessvoid.nifty.Nifty;
 import createacity.states.*;
+import de.lessvoid.nifty.Nifty;
+import javax.swing.JOptionPane;
 
 /**
  * <code>createacityApplication</code> extends the {@link com.jme3.app.SimpleApplication}
@@ -43,7 +44,8 @@ import createacity.states.*;
  */
 public class CityApplication extends SimpleApplication{
         
-    public MainState mainState;
+    private MainState mainState;
+    private PauseState pauseState;
     protected Nifty nifty;
     public static final boolean DEBUG = false;
     
@@ -59,13 +61,33 @@ public class CityApplication extends SimpleApplication{
             inputManager.deleteMapping(INPUT_MAPPING_EXIT);
         }
         
+        Object[] options = {"Drive",
+                    "Fly around"};
+        int n = JOptionPane.showOptionDialog(null,
+            "Would you like to drive or fly around the map?\n(Please give the city a few seconds to load)",
+            "Drive or Fly?",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE,
+            null,     //do not use a custom Icon
+            options,  //the titles of buttons
+            options[0]); //default button title
+        
         setDisplayFps(false);
         setDisplayStatView(false);
-        mainState = new DrivingState(this);
+        if (n == 0) {
+            mainState = new DrivingState(this);
+        } else {
+            mainState = new MainState(this);
+        }
+        pauseState = new PauseState(this);
+        
          
         viewPort.detachScene(rootNode);
         viewPort.attachScene(mainState.getRootNode());
         stateManager.attach(mainState);  
+        stateManager.attach(pauseState);
+        mainState.setEnabled(true);
+        pauseState.setEnabled(false);
         
         setupKeys();    
     }
@@ -79,6 +101,7 @@ public class CityApplication extends SimpleApplication{
     }
     
     private ActionListener actionListener = new ActionListener() {
+        @Override
         public void onAction(String binding, boolean keyPressed, float tpf){
             if(binding.equals("Teleport to Location") && keyPressed){
                 CityHelper.moveCamera(cam);
@@ -106,4 +129,12 @@ public class CityApplication extends SimpleApplication{
     public void simpleInitApp() {
        
     }   
+    
+    public MainState getMainState() {
+        return mainState;
+    }
+    
+    public PauseState getPauseState() {
+        return pauseState;
+    }
 }

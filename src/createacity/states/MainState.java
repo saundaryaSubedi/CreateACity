@@ -40,11 +40,15 @@ import com.jme3.input.controls.JoyButtonTrigger;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
+import com.jme3.light.PointLight;
+import com.jme3.light.SpotLight;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Ray;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
+import com.jme3.post.FilterPostProcessor;
+import com.jme3.post.ssao.SSAOFilter;
 import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Node;
 import com.jme3.scene.Spatial;
@@ -70,6 +74,9 @@ import createacity.StreetInfo;
 import createacity.Vehicle;
 import createacity.VehicleSensor;
 import createacity.ai.AIVehicle;
+import de.lessvoid.nifty.elements.Element;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Main state
@@ -83,10 +90,11 @@ public class MainState extends AbstractAppState implements ActionListener{
     protected HashMap<String, IntersectionInfo> intersectionInfoMap;
     protected HUD hud;
     DirectionalLight sun;
-    private Vector3f lightDir = new Vector3f(0,-1,0); // same as light source
+    SpotLight spot;
+    private Vector3f lightDir = new Vector3f(-.5f, -.5f, -.5f); // same as light source
     BasicShadowRenderer bsr;
     protected FlyByCamera flyCam; 
-    private final float FLYCAM_SPEED = 200;
+    private final float FLYCAM_SPEED = 100;
     protected BulletAppState bulletAppState;
    
     private float min = 1, max = -1;
@@ -113,10 +121,11 @@ public class MainState extends AbstractAppState implements ActionListener{
         
         flyCam = new FlyByCamera(app.getCamera());
         flyCam.setMoveSpeed(FLYCAM_SPEED);
+        flyCam.setDragToRotate(false);
         flyCam.registerWithInput(inputManager);       
         
         hud = new HUD(this.app.getSettings());
-        app.getNifty().fromXml("hud.xml", "hud");
+        
         //rootNode.attachChild(SkyFactory.createSky(app.getAssetManager(), "Scenes/Beach/FullskiesSunset0068.dds", false));
         
         BlenderKey blenderKey = new BlenderKey("Models/City/City.blend");
@@ -128,19 +137,25 @@ public class MainState extends AbstractAppState implements ActionListener{
         
         bulletAppState = new BulletAppState();
         app.getStateManager().attach(bulletAppState);
-        //if (createacityApplication.DEBUG)
-            //bulletAppState.getPhysicsSpace().enableDebug(app.getAssetManager());
+        if (CityApplication.DEBUG) {
+            bulletAppState.getPhysicsSpace().enableDebug(app.getAssetManager());
+        }
         
         rawWorld.setName("World");
         rawWorld.setShadowMode(ShadowMode.CastAndReceive);
         
         vehicles = new Node("Vehicles");
         rootNode.attachChild(vehicles);
+        //app.getNifty().registerS
+        //app.getNifty().registerScreenController(app.pauseState);
+        
+        Logger.getLogger("").setLevel(Level.SEVERE);
         
         initWorld();
         rootNode.attachChild(rawWorld);
-        AmbientLight al = new AmbientLight();
-        al.setColor(ColorRGBA.White.mult(1.3f));
+        PointLight al = new PointLight();
+        al.setColor(ColorRGBA.White.mult(.5f));
+        al.setPosition(new Vector3f(0, 12, 8));
         rootNode.addLight(al);
         CollisionShape level_shape = CollisionShapeFactory.createMeshShape(rawWorld);
         
@@ -164,6 +179,15 @@ public class MainState extends AbstractAppState implements ActionListener{
         app.getCamera().setFrustumFar(5000);
         app.getCamera().setLocation(new Vector3f(90, 10, -112f));
         
+        spot = new SpotLight();
+        spot.setSpotRange(100f);                           // distance
+        spot.setSpotInnerAngle(15f * FastMath.DEG_TO_RAD); // inner light cone (central beam)
+        spot.setSpotOuterAngle(35f * FastMath.DEG_TO_RAD); // outer light cone (edge of the light)
+        spot.setColor(ColorRGBA.White.mult(1.3f));         // light color
+        spot.setPosition(app.getCamera().getLocation());               // shine from camera loc
+        spot.setDirection(app.getCamera().getDirection());             // shine forward from camera loc
+        rootNode.addLight(spot);
+        
         testAI = new AIVehicle(rootNode, world, new Vector3f(-107, 0, 95f), new Vector3f(0, FastMath.PI, 0), new Vector3f(1.79578f, 1.47574f, 4.5974f), app.getInputManager(), app.getViewPort(), app.getAssetManager(), vehicles, bulletAppState.getPhysicsSpace());
         app.getCamera().lookAt(testAI.getVehicle().getPlayer().getPhysicsLocation(), Vector3f.UNIT_Y);
         testAI.reorient();
@@ -171,30 +195,43 @@ public class MainState extends AbstractAppState implements ActionListener{
         
         closestRoad = null;
         
+        if (CityApplication.DEBUG) {
+            bulletAppState.getPhysicsSpace().enableDebug(app.getAssetManager());    
+        }
+        
+        
+        
     }
     
     @Override
     public void initialize(AppStateManager stateManager, Application app){
         super.initialize(stateManager, app); 
         
-        InputManager inputManager = app.getInputManager();
-        //flyCam.setEnabled(true);
-        //flyCam.registerWithInput(inputManager);
-        inputManager.addMapping(MAIN_PAUSE, new KeyTrigger(KeyInput.KEY_ESCAPE));
-        //inputManager.addMappin
-        inputManager.addListener(this, MAIN_PAUSE);
+        
         
         
     }
     
+    private void addInputMappings() {
+        InputManager inputManager = app.getInputManager();
+        inputManager.addMapping(MAIN_PAUSE, new KeyTrigger(KeyInput.KEY_ESCAPE));
+        inputManager.addListener(this, MAIN_PAUSE);
+    }
+    
+    private void removeInputMappings() {
+        InputManager inputManager = app.getInputManager();
+        inputManager.deleteMapping(MAIN_PAUSE);
+        inputManager.removeListener(this);
+    }
+    
     private void initWorld() {
-        streetInfoMap = new HashMap<String, StreetInfo>();
-        intersectionInfoMap = new HashMap<String, IntersectionInfo>();
-        sensors = new ArrayList<Sensor>();
+        streetInfoMap = new HashMap<>();
+        intersectionInfoMap = new HashMap<>();
+        sensors = new ArrayList<>();
         
-        if (!CityApplication.DEBUG) {
+        //if (!CityApplication.DEBUG) {
             adjustPhysics();
-        }
+        //}
         
         world = NodeInspector.buildNode(rootNode, rawWorld, streetInfoMap, intersectionInfoMap, sensors);
         
@@ -229,6 +266,10 @@ public class MainState extends AbstractAppState implements ActionListener{
     
     @Override
     public void update(float tpf){
+        /*if (!app.getNifty().getCurrentScreen().getScreenId().equals("hud")) {
+            app.getNifty().fromXml("hud.xml", "hud");
+        }*/
+        
         if (findingClosestRoad) {
             loc = CityHelper.getLocation();
            closestRoad = getNearestStreet();
@@ -240,7 +281,7 @@ public class MainState extends AbstractAppState implements ActionListener{
         }
         }
         hud.update(rootNode, app.getCamera(), app.getNifty(), streetInfoMap);
-        //setSunDir();
+        setSunDir();
         testAI.step(tpf);
         //System.out.println(app.getCamera().getLocation());
         
@@ -248,6 +289,9 @@ public class MainState extends AbstractAppState implements ActionListener{
             app.getCamera().setLocation(testAI.getVehicle().getCarNode().getWorldTranslation().add(new Vector3f(0, testAI.getVehicle().getCarNode().getWorldScale().getY() + 1, 0)));
             app.getCamera().setRotation(testAI.getVehicle().getCarNode().getWorldRotation());
         }
+        
+        spot.setPosition(app.getCamera().getLocation());
+        spot.setDirection(app.getCamera().getDirection());
         
         IntersectionInfo intersection = intersectionInfoMap.get("NorthAve_EastAve_0");
         Integer[] intersectionInt = intersection.getRoadIntersections().get("NorthAve");
@@ -293,17 +337,24 @@ public class MainState extends AbstractAppState implements ActionListener{
         bsr.setDirection(lightDir.normalizeLocal()); //Update shadow direction
     }
             
+    @Override
     public void onAction(String name, boolean isPressed, float tpf) {
-        if (name.equals(MAIN_PAUSE) && isPressed) {          
-                    app.getStateManager().detach(app.mainState);
-                    app.getStateManager().attach(new PauseState());
-                    flyCam.unregisterInput();
-                    flyCam.setEnabled(false);
-                    app.getInputManager().clearMappings();
+        
+        if (name.equals(MAIN_PAUSE) && isPressed) {
+                
+                    //app.getStateManager().detach(app.mainState);
+                    setEnabled(false);
+                    app.getPauseState().setEnabled(true);
+                    //app.getInputManager().clearMappings();
+                    //app.getNifty().fromXml("gui/hud.xml", "pause");
+                    //Element exitPopup = app.getNifty().createPopup("exitPopup");
+                    
         }
         
-        if (name.equals(MAIN_PAUSE) && !isPressed)
-            flyCam.registerWithInput(app.getInputManager());
+        if (name.equals(MAIN_PAUSE) && !isPressed) {
+            bulletAppState.setEnabled(true);
+            
+        }
             
     }
     
@@ -333,14 +384,35 @@ public class MainState extends AbstractAppState implements ActionListener{
             return nearestStreet;
         
     }
+    
     @Override
-    public void stateAttached(AppStateManager stateManager) { }
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        
+        if (enabled) {
+            app.getNifty().fromXml("hud.xml", "hud");
+            bulletAppState.setEnabled(true);
+            flyCam.setEnabled(true);
+            flyCam.setDragToRotate(false);
+            flyCam.registerWithInput(app.getInputManager());
+            addInputMappings();
+        } else {
+            flyCam.unregisterInput();
+            flyCam.setEnabled(false);
+            bulletAppState.setEnabled(false);
+            removeInputMappings();
+            app.getNifty().removeScreen("hud");
+        }
+    }
+    
+    @Override
+    public void stateAttached(AppStateManager stateManager) { 
+        
+    }
     
     @Override
     public void stateDetached(AppStateManager stateManager) {       
-        flyCam.unregisterInput();
-        flyCam.setEnabled(false);
-        app.getInputManager().clearMappings();
+        
     }
     
     /**

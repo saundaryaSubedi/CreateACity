@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nifty xmlns="http://nifty-gui.sourceforge.net/nifty-1.3.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://nifty-gui.sourceforge.net/nifty-1.3.xsd http://nifty-gui.sourceforge.net/nifty-1.3.xsd">
+
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <!-- load default styles and controls -->
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <useStyles filename="nifty-default-styles.xml" />
+  <useControls filename="nifty-default-controls.xml" />
+
+
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <!-- start screen -->
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <screen id="pause" controller="createacity.states.PauseState">
+    <layer id="layer" childLayout="center">
+      <panel id="dialog" childLayout="center" padding="18px,28px,28px,16px" width="55%" height="58%" align="center">
+        <panel style="nifty-panel-red" childLayout="center" padding="18px,28px,40px,16px" width="400px" height="100px" align="center">
+      <!--<effect>
+        <onStartScreen name="fade" start="#0" end="#f" length="150" startDelay="250"/>
+        <onStartScreen name="imageSize" timeType="exp" factor="3.5" startSize="1.5" endSize="1.0" inherit="true" length="150" startDelay="250"/>
+        <onEndScreen name="fade" start="#f" end="#0" length="150" startDelay="0"/>
+        <onEndScreen name="imageSize" timeType="exp" factor="3.5" startSize="1.0" endSize="1.5" inherit="true" length="150" startDelay="0"/>
+      </effect>-->
+      <panel childLayout="vertical" align="center">
+        <!--<effect>
+          <onStartScreen name="alphaHide" length="500" inherit="true" />
+          <onEndScreen name="fade" length="10" start="#f" end="#0" inherit="true" />
+        </effect>-->
+        <panel childLayout="center" height="0%" width="100%">
+          <text text="Are you sure you want to leave the demo?" style="base-font" align="center" valign="center" color="#000f"/>
+        </panel>
+        <panel childLayout="horizontal" align="center" height="150%">
+          <panel childLayout="center" height="100%" width="50%">
+            <control id="yesButton" name="button" label="Yes" width="50%" align="center">
+              <interact onClick="exit()" /> 
+            </control>
+          </panel>
+          <panel childLayout="center" height="100%" width="50%">
+            <control id="noButton" name="button" label="No" width="50%" align="center" visibleToMouse="true">
+              <interact onClick="resume()" /> 
+            </control>
+          </panel>
+        </panel>
+      </panel>
+    </panel>
+      </panel>
+    </layer>
+  </screen>
+  
+  <screen id="leaveFeedback" controller="createacity.states.PauseState">
+    <layer id="layer" childLayout="center">
+      <panel id="dialog" childLayout="center" padding="18px,28px,28px,16px" width="55%" height="58%" align="center">
+        <panel style="nifty-panel-red" childLayout="center" padding="18px,28px,40px,16px" width="700px" height="100px" align="center">
+      <!--<effect>
+        <onStartScreen name="fade" start="#0" end="#f" length="150" startDelay="250"/>
+        <onStartScreen name="imageSize" timeType="exp" factor="3.5" startSize="1.5" endSize="1.0" inherit="true" length="150" startDelay="250"/>
+        <onEndScreen name="fade" start="#f" end="#0" length="150" startDelay="0"/>
+        <onEndScreen name="imageSize" timeType="exp" factor="3.5" startSize="1.0" endSize="1.5" inherit="true" length="150" startDelay="0"/>
+      </effect>-->
+      <panel childLayout="vertical" align="center">
+        <!--<effect>
+          <onStartScreen name="alphaHide" length="500" inherit="true" />
+          <onEndScreen name="fade" length="10" start="#f" end="#0" inherit="true" />
+        </effect>-->
+        <panel childLayout="center" height="0%" width="100%">
+          <text text="We need people to develop this open source project. Are you interested?" style="base-font" align="center" valign="center" color="#000f"/>
+        </panel>
+        <panel childLayout="horizontal" align="center" height="150%">
+          <panel childLayout="center" height="100%" width="50%">
+            <control id="yesButton" name="button" label="Yes" width="50%" align="center">
+              <interact onClick="leaveFeedback()" /> 
+            </control>
+          </panel>
+          <panel childLayout="center" height="100%" width="50%">
+            <control id="noButton" name="button" label="Exit to desktop" width="50%" align="center" visibleToMouse="true">
+              <interact onClick="reallyExit()" /> 
+            </control>
+          </panel>
+        </panel>
+      </panel>
+    </panel>
+      </panel>
+    </layer>
+  </screen>
+  
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <!-- sure to exit popup -->
+  <!-- +++++++++++++++++++++++++++++++++++++++ -->
+  <popup id="popupExit" childLayout="center" backgroundColor="#000a" controller="createacity.states.PauseState">
+    <!--<effect>
+      <onStartScreen name="fade" startColor="#0000" endColor="#000a" length="250" />
+      <onEndScreen name="fade" startColor="#000a" endColor="#0000" length="250" startDelay="250" />
+    </effect>-->
+    
+  </popup>
+  
+  <popup id="visitForums" childLayout="center" backgroundColor="#000a">
+    <!--<effect>
+      <onStartScreen name="fade" startColor="#0000" endColor="#000a" length="250" />
+      <onEndScreen name="fade" startColor="#000a" endColor="#0000" length="250" startDelay="250" />
+    </effect>-->
+    
+  </popup>
+</nifty>

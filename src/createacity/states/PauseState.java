@@ -25,54 +25,123 @@ import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import createacity.CityApplication;
+import de.lessvoid.nifty.Nifty;
+import de.lessvoid.nifty.screen.Screen;
+import de.lessvoid.nifty.screen.ScreenController;
+import edu.stanford.ejalbert.BrowserLauncher;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class PauseState extends AbstractAppState implements ActionListener{
+public class PauseState extends AbstractAppState implements ActionListener, ScreenController{
     private CityApplication app;
+    private Screen screen;
+    private Nifty nifty;
+    
+    public PauseState() {}
+    
+    public PauseState(CityApplication app) {
+        this.app = app;
+        this.nifty = app.getNifty();
+    }
     
     @Override
     public void initialize(AppStateManager stateManager, Application app){
         super.initialize(stateManager, app);
         this.app = (CityApplication) app;
-        initKeys();
+        nifty = ((CityApplication)app).getNifty();
+        screen = nifty.getCurrentScreen();
     }
     
-    private void initKeys(){
+    private void addInputMappings(){
         InputManager inputManager = app.getInputManager();
         
         inputManager.addMapping("PAUSE_Return", new KeyTrigger(KeyInput.KEY_ESCAPE));
         inputManager.addMapping("PAUSE_Quit", new KeyTrigger(KeyInput.KEY_RETURN));
         inputManager.addListener(this, "PAUSE_Return", "PAUSE_Quit");
     }
+    
+    private void removeInputMappings() {
+        InputManager inputManager = app.getInputManager();
+        
+        if (inputManager.hasMapping("PAUSE_Quit")) {
+            inputManager.deleteMapping("PAUSE_Quit");
+        }
+        
+        if (inputManager.hasMapping("PAUSE_Return")) {
+            inputManager.deleteMapping("PAUSE_Return");
+        }
+        
+        inputManager.removeListener(this);
+    }
 
+    @Override
     public void onAction(String name, boolean isPressed, float tpf) {
-        if (name.equals("PAUSE_Quit"))
-            app.stop();
+        if (name.equals("PAUSE_Quit")) {
+            exit();
+        }
         else if (name.equals("PAUSE_Return") && isPressed){
-            
-            app.getStateManager().detach(this);
-            app.getStateManager().attach(app.mainState);
-            //app.getViewPort().attachScene(mainState.getRootNode());
+            resume();
         }
     }
     
     @Override
-    public void stateAttached(AppStateManager stateManager) {
-        if (isInitialized())
-            initKeys();
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
         
+        if (enabled) {
+            addInputMappings();
+            nifty.fromXml("pause.xml", "pause", this);
+        } else {
+            removeInputMappings();
+            
+            nifty.removeScreen("pause");
+        }
+    }
+
+    @Override
+    public void bind(Nifty nifty, Screen screen) {
+        this.nifty = nifty;
+        this.screen = screen;
+    }
+
+    @Override
+    public void onStartScreen() {
+        //throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void onEndScreen() {
+        //throw new UnsupportedOperationException("Not supported yet.");
     }
     
     @Override
-    public void stateDetached(AppStateManager stateManager) {
-        app.getInputManager().clearMappings();
+    public void update(float tpf) {
+        
+    }
+  
+    public void resume() {
+        setEnabled(false);
+        app.getMainState().setEnabled(true);
     }
     
-    /*@Override
-    public void cleanup(){
-        super.cleanup();
-        app.getInputManager().deleteMapping("PAUSE_Return");
-        app.getInputManager().deleteMapping("PAUSE_Quit");
-        app.getInputManager().removeListener(this);
-        app.getInputManager().addMapping(createacityApplication.INPUT_MAPPING_PAUSE, new KeyTrigger(KeyInput.KEY_ESCAPE));
-    }*/
+    public void exit() {
+        nifty.fromXml("pause.xml", "leaveFeedback", this);
+        //app.stop();
+    }
+    
+    public void leaveFeedback() {
+        try {
+            BrowserLauncher launcher = new BrowserLauncher();
+            launcher.openURLinBrowser("http://createacity.org/2013/05/demo-now-available/");
+        } catch (BrowserLaunchingInitializingException | UnsupportedOperatingSystemException ex) {
+            Logger.getLogger(PauseState.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        app.stop();
+    }
+    
+    public void reallyExit() {
+        app.stop();
+    }
 }

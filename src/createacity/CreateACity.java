@@ -27,7 +27,7 @@ public class CreateACity{
     public static void main(String[] args) {
         CityApplication app = new CityApplication();
         AppSettings settings = new AppSettings(true);
-        settings.setTitle("Create a City Prototype 10/31/2012");
+        settings.setTitle("Create a City Demo");
         settings.setWidth(800);
         settings.setHeight(600);
         settings.setUseJoysticks(true);

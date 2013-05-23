@@ -24,8 +24,9 @@ public class WayList {
     }
     
     public void update(AssetManager assetManager, Node rootNode){
-        if (debug)
+        if (debug) {
             drawDebug(assetManager, rootNode);
+        }
     }
     
     private void drawDebug(AssetManager assetManager, Node rootNode){

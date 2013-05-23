@@ -18,19 +18,12 @@
 package createacity;
 
 import com.jme3.asset.AssetManager;
-import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
-import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.control.VehicleControl;
-import com.jme3.bullet.util.CollisionShapeFactory;
 import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
-import com.jme3.input.controls.ActionListener;
-import com.jme3.input.controls.AnalogListener;
-import com.jme3.input.controls.JoyAxisTrigger;
-import com.jme3.input.controls.JoyButtonTrigger;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
@@ -39,16 +32,12 @@ import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.ViewPort;
-import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
-import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Cylinder;
-import com.jme3.shadow.BasicShadowRenderer;
-import com.jme3.system.AppSettings;
-import java.util.ArrayList;
 import createacity.drivetrain.*;
+import java.util.ArrayList;
 //import createacity.ai.*;
 
 /**
@@ -57,7 +46,7 @@ import createacity.drivetrain.*;
  *
  */
 
-public class Vehicle implements ActionListener, AnalogListener {
+public class Vehicle {
 
     private VehicleControl player;
     private float wheelRadius;
@@ -76,8 +65,12 @@ public class Vehicle implements ActionListener, AnalogListener {
     private float steerDeadzone = .1f;
     private float accelerateDeadzone = .1f;
     private float brakeDeadzone = .4f;
-    private float steeringWheelRecoveryRate = 1f;
+    private float steeringWheelRecoveryRate = (float)Math.PI * 2;
     private float steerValue = 0f;
+    private float steeringRatio = 15f;
+    private float steeringWheelAngle = 0f;
+    private float steeringWheelTurnRate = (float)Math.PI * 2;
+    private float wheelAngle = 0f;
     Geometry body;
 
  /**
@@ -100,36 +93,11 @@ public class Vehicle implements ActionListener, AnalogListener {
         this.wheelRadius = wheelRadius;
         this.dimensions = dimensions;
         
-
-        if (!isAI)
-            setupKeys(inputManager);
-        
         buildPlayer(name, model, assetManager, parentNode, pSpace);
         setupDriveTrain(inputManager, pSpace);
 
     }
 
-    private void setupKeys(InputManager inputManager) {
-        inputManager.addMapping("Lefts", new KeyTrigger(KeyInput.KEY_A));
-        inputManager.addMapping("Rights", new KeyTrigger(KeyInput.KEY_D));
-        inputManager.addMapping("Space", new KeyTrigger(KeyInput.KEY_SPACE));
-        inputManager.addMapping("Reset", new KeyTrigger(KeyInput.KEY_RETURN));
-        inputManager.addListener(this,"Lefts");
-        inputManager.addListener(this,"Rights");
-        inputManager.addListener(this,"Ups");
-        inputManager.addListener(this,"Downs");
-        inputManager.addListener(this,"Space");
-        inputManager.addListener(this,"Reset");
-        
-        inputManager.addMapping("Steer Left", new JoyAxisTrigger(0, 1, true), new KeyTrigger(KeyInput.KEY_A));
-        inputManager.addMapping("Steer Right", new JoyAxisTrigger(0, 1, false), new KeyTrigger(KeyInput.KEY_D));      
-        inputManager.addMapping("Accelerate Vehicle", new JoyAxisTrigger(0, 4, true), new KeyTrigger(KeyInput.KEY_W));
-        inputManager.addMapping("Brake Vehicle", new JoyAxisTrigger(0, 4, false), new KeyTrigger(KeyInput.KEY_S));
-        inputManager.addListener(this, new String[]{"Steer Left", "Steer Right", "Accelerate Vehicle", "Brake Vehicle"});
-        inputManager.addMapping("Gear Up", new JoyButtonTrigger(0, 5), new KeyTrigger(KeyInput.KEY_UP));
-        inputManager.addMapping("Gear Down", new JoyButtonTrigger(0, 4), new KeyTrigger(KeyInput.KEY_DOWN));
-        inputManager.addListener(this, "Gear Up", "Gear Down");
-    }
     
     private void setupDriveTrain(InputManager inputManager, PhysicsSpace pSpace){
         gearbox = new GearBox();
@@ -168,7 +136,7 @@ public class Vehicle implements ActionListener, AnalogListener {
         drivetrain.setFinalRatio(.6f);
         
         combustionPropUnit = new InternalCombustionPropulsionUnit(engine,gearbox,drivetrain,player);
-        ArrayList<PropulsionUnit> propUnits = new ArrayList<PropulsionUnit>();
+        ArrayList<PropulsionUnit> propUnits = new ArrayList<>();
         propUnits.add(combustionPropUnit);
         
         
@@ -184,22 +152,6 @@ public class Vehicle implements ActionListener, AnalogListener {
             ((Node) player.getUserObject()).addControl(controller);
             pSpace.addTickListener(controller);
         
-    }
-
-    private Geometry findGeom(Spatial spatial, String name){
-        if (spatial instanceof Node){
-            Node node = (Node) spatial;
-            for (int i = 0; i < node.getQuantity(); i++){
-                Spatial child = node.getChild(i);
-                Geometry result = findGeom(child, name);
-                if (result != null)
-                    return result;
-            }
-        }else if (spatial instanceof Geometry){
-            if (spatial.getName().startsWith(name))
-                return (Geometry) spatial;
-        }
-        return null;
     }
 
     private void buildPlayer(String name, String model, AssetManager assetManager, Node parentNode, PhysicsSpace pSpace) {
@@ -291,37 +243,20 @@ public class Vehicle implements ActionListener, AnalogListener {
         carNode.addControl(player);
         
         
-        if (!CityApplication.DEBUG) {
+        //if (!CityApplication.DEBUG) {
             Box bodyBox = new Box(Vector3f.ZERO.add(0, dimensions.getY() / 2f, 0), dimensions.getX() / 2f, dimensions.getY() / 2f, dimensions.getZ() / 2f);
+            
             Material bodyMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
             bodyMat.setColor("Color", ColorRGBA.Red);
             body = new Geometry("Car Body", bodyBox);
             body.setMaterial(bodyMat);
             parentNode.attachChild(body);
-        }
+        //}
+            
     }
 
-    public void onAction(String name, boolean isPressed, float tpf) {
-        if (name.equals("Gear Up") && !isPressed)
-            combustionPropUnit.gearUp();
-        
-        if (name.equals("Gear Down") && !isPressed)
-            combustionPropUnit.gearDown();
-
-        //note that our fancy car actually goes backwards..
-        /*else if (binding.equals("Ups")) {
-            if(value)
-                accelerationValue-=800;
-            else
-                accelerationValue+=800;
-            player.accelerate(accelerationValue);
-        } else if (binding.equals("Downs")) {
-            if(value)
-                player.brake(40f);
-            else
-                player.brake(0f);
-        }*/ else if (name.equals("Reset") && isPressed) {
-                System.out.println("Reset");
+    public void reset() {
+        System.out.println("Reset");
                 player.setPhysicsLocation(defaultLocation);
                 Quaternion q = new Quaternion();
                 q.fromAngles(defaultRotation.getX(), defaultRotation.getY(), defaultRotation.getZ());
@@ -338,82 +273,83 @@ public class Vehicle implements ActionListener, AnalogListener {
                 player.setLinearVelocity(Vector3f.ZERO);
                 player.setAngularVelocity(Vector3f.ZERO);
                 player.resetSuspension();
-            
-        }
     }
     
     public void update(float tpf) {
         if (!isAI) {
-            if (pedalDepressed)
+            if (pedalDepressed) {
                 pedalDepressed = false;
-            else
-                combustionPropUnit.activate(0, false);
-
-            if (steering)
-                steering = false;
+            }
             else {
-                if (FastMath.abs(steerValue - (steeringWheelRecoveryRate * tpf)) <= 0) {
+                combustionPropUnit.activate(0, false);
+            }
+
+            if (steering) {
+                steering = false;
+            }
+            else {
+                if (FastMath.abs(steeringWheelAngle - (steeringWheelRecoveryRate * tpf)) <= 0) {
                             steerValue = 0;
                 }
                 else {
-                    if (FastMath.sign(steerValue) == 1) {
-                        steerValue -= steeringWheelRecoveryRate * tpf;
+                    if (FastMath.sign(steeringWheelAngle) == 1) {
+                        steeringWheelAngle -= steeringWheelRecoveryRate * tpf;
                         
                     }
-                    else if (FastMath.sign(steerValue) == -1) {
-                        steerValue += steeringWheelRecoveryRate * tpf;
+                    else if (FastMath.sign(wheelAngle) == -1) {
+                        steeringWheelAngle += steeringWheelRecoveryRate * tpf;
                     }
                 }
                 
             }
         }
         
-        player.steer(steerValue);
-        //System.exit(0);
+        wheelAngle = steeringWheelAngle/steeringRatio;
+        
+        player.steer(wheelAngle);
+
         
         if (body != null) {
-           body.setLocalTranslation(player.getPhysicsLocation());
+           body.setLocalTranslation(player.getPhysicsLocation().add(new Vector3f(0, wheelRadius, 0)));
            body.setLocalRotation(player.getPhysicsRotation());
         }
     }
     
-    public void onAnalog(String name, float isPressed, float tpf) {
-        if (!isAI) {
-            float pos = isPressed / tpf;
-
-
-                if (name.equals("Accelerate Vehicle") || name.equals("Brake Vehicle")){
-                    pedalDepressed = true;
-                    if (name.equals("Accelerate Vehicle")){
-                        if (pos >= accelerateDeadzone)
-                            combustionPropUnit.activate(pos, true);
-                        else
-                            combustionPropUnit.activate(0, false);
-                } else if (name.equals("Brake Vehicle")){ 
-                        if (pos >= brakeDeadzone)
-                            combustionPropUnit.activate(-pos, false);
-                        else
-                            combustionPropUnit.activate(0, false);
-                    } 
-                } 
-
-
-
-
-                if (name.equals("Steer Left") || name.equals("Steer Right")){
-                    if (pos >= steerDeadzone){
-                        steering = true;
-
-                        if (name.equals("Steer Left")){
-                            if ((steerValue + tpf/2) <= pos)
-                                steerValue += tpf/2;
-                        }    
-                        else if (FastMath.abs((steerValue - tpf/2)) <= pos)
-                            steerValue -= tpf/2;
-                    } 
-                }
+    public void throttlePressed(float value) {
+        pedalDepressed = true;
+        if (value >= accelerateDeadzone) {
+            combustionPropUnit.activate(value, true);
+        } else {
+            combustionPropUnit.activate(0, false);
+        }
+    }
+    
+    public void brakePressed(float value) {
+        pedalDepressed = true;
+        if (value >= brakeDeadzone) {
+            combustionPropUnit.activate(-value, false);
+        } else {
+            combustionPropUnit.activate(0, false);
+        }
+    }
+    
+    public void steer(float value, float tpf) {
+     
+        steeringWheelAngle += value * tpf * steeringWheelTurnRate;
+        
+        if (steeringWheelAngle > (float)Math.PI * 4f) {
+            steeringWheelAngle = (float)Math.PI * 4f;
         }
         
+        if (steeringWheelAngle < (float)Math.PI * -4f) {
+            steeringWheelAngle = (float)Math.PI * -4f;
+        }
+        
+        
+        //if (value >= steerDeadzone){
+            steering = true;
+        //}
+            
     }
 
     public VehicleControl getPlayer() {
@@ -437,7 +373,7 @@ public class Vehicle implements ActionListener, AnalogListener {
     }
 
     public void setSteeringValue(float steeringValue) {
-        this.steerValue = steeringValue;
+        this.steeringWheelAngle = steeringValue;
     }
 
     public Node getCarNode() {
