@@ -170,6 +170,8 @@ public class AIVehicle {
     //Stay in middle of current lane
     private void stayInMiddleOfCurrentLane(float tpf) {
         Vector3f leftNormal = Vector3f.ZERO, rightNormal = Vector3f.ZERO, middleOfCurrentLane = Vector3f.ZERO;
+        float[] leftDirection = null, rightDirection = null;
+        Quaternion leftQ = null, rightQ = null;
         Quaternion rotateLeft = new Quaternion(), rotateRight = new Quaternion();
         rotateLeft.fromAngleAxis(FastMath.HALF_PI, Vector3f.UNIT_Y);
         rotateRight.fromAngleAxis(-FastMath.HALF_PI, Vector3f.UNIT_Y);
@@ -212,14 +214,24 @@ public class AIVehicle {
                     
                     if (currentResult.getGeometry().getParent().getName().equals("RL_" + currentRoadNode.getName().substring(2) + "_" + (currentRoadLane - 1))) {
                         leftNormal = currentResult.getContactPoint();
+                        leftQ = currentResult.getGeometry().getParent().getLocalRotation();
+                        leftDirection = leftQ.toAngles(null);
+                        leftDirection[1] += FastMath.PI / 2f;
+                        leftQ = new Quaternion(leftDirection);
                     }
                     
                     if (currentResult.getGeometry().getParent().getName().equals("RL_" + currentRoadNode.getName().substring(2) + "_" + (currentRoadLane))) {
-                        rightNormal = currentResult.getContactPoint();
+                        rightQ = currentResult.getGeometry().getParent().getLocalRotation();
+                        rightDirection = rightQ.toAngles(null);
+                        rightQ = new Quaternion(rightDirection);
                     }
                 }
                 
-                //System.out.println(leftResults.g);
+                if (leftDirection != null)
+                    System.out.println(leftDirection[0] + " " + leftDirection[1] + " " + leftDirection[2]);
+                
+                if (rightDirection != null)
+                    System.out.println(rightDirection[0] + " " + rightDirection[1] + " " + rightDirection[2]);
             }
 
             if (rightResults.size() > 0 && rightResults.getClosestCollision().getDistance() < 10){
@@ -229,17 +241,31 @@ public class AIVehicle {
                     CollisionResult currentResult = itr.next();
                     
                     if (currentResult.getGeometry().getParent().getName().equals("RL_" + currentRoadNode.getName().substring(2) + "_" + (currentRoadLane - 1))) {
-                        leftNormal = currentResult.getContactPoint();
+                        leftQ = currentResult.getGeometry().getParent().getLocalRotation();
+                        leftDirection = leftQ.toAngles(null);
+                        leftDirection[1] += FastMath.PI / 2f;
+                        leftQ = new Quaternion(leftDirection);
                     }
                     
                     if (currentResult.getGeometry().getParent().getName().equals("RL_" + currentRoadNode.getName().substring(2) + "_" + (currentRoadLane))) {
-                        rightNormal = currentResult.getContactPoint();
+                        rightQ = currentResult.getGeometry().getParent().getLocalRotation();
+                        rightDirection = rightQ.toAngles(null);
+                        rightQ = new Quaternion(rightDirection);
                     }
                 }
+                
+                if (leftDirection != null)
+                    System.out.println(leftDirection[0] + " " + leftDirection[1] + " " + leftDirection[2]);
+                
+                if (rightDirection != null)
+                    System.out.println(rightDirection[0] + " " + rightDirection[1] + " " + rightDirection[2]);
             }
             
             middleOfCurrentLane = leftNormal.add(rightNormal).divide(2f);
-            Vector3f forwardVector = vehicle.getPlayer().getForwardVector(null);
+            if (leftQ != null)
+                vehicle.getPlayer().setPhysicsRotation(leftQ);
+            //System.out.println(((leftDirection[0] + rightDirection[0]) / 2f) + " " + ((leftDirection[1] + rightDirection[1]) / 2f) + " " + ((leftDirection[2] + rightDirection[2]) / 2f));
+            /*Vector3f forwardVector = vehicle.getPlayer().getForwardVector(null);
             Vector3f laneVector = middleOfCurrentLane.subtract(vehicle.getPlayer().getPhysicsLocation());
             //forwardVector.normalizeLocal();
             //laneVector.normalizeLocal();
@@ -268,7 +294,8 @@ public class AIVehicle {
             //System.out.println(rightNormal.distance(vehicle.getPlayer().getPhysicsLocation()));
                 //System.exit(0);
         //System.out.println(leftNormal.distance(vehicle.getPlayer().getPhysicsLocation()) + " " + rightNormal.distance(vehicle.getPlayer().getPhysicsLocation()));
-        //System.out.println(vehicle.getSteeringValue());
+        //System.out.println(vehicle.getSteeringValue());*/
+        }
     }
     
     public void reorient() {

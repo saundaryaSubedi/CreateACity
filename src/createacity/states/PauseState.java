@@ -127,8 +127,8 @@ public class PauseState extends AbstractAppState implements ActionListener, Scre
     }
     
     public void exit() {
-        nifty.fromXml("pause.xml", "leaveFeedback", this);
-        //app.stop();
+        //nifty.fromXml("pause.xml", "leaveFeedback", this);
+        app.stop();
     }
     
     public void leaveFeedback() {

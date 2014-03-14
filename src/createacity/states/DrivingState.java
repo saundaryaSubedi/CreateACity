@@ -32,7 +32,7 @@ public class DrivingState extends MainState implements ActionListener, AnalogLis
     private enum VEHICLE_CAMERAS{THIRD, FIRST};    
     private VEHICLE_CAMERAS camSetting;
     //private long timeElapsedSinceOverriden = 0;
-    private static final boolean SHOW_CAR_STATS = true;
+    private static final boolean SHOW_CAR_STATS = false;
    
     
     private Vehicle car;
