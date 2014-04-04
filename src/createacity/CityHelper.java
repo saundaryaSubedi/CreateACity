@@ -65,4 +65,30 @@ public class CityHelper {
         Vector3f loc = new Vector3f(input.nextFloat(), input.nextFloat(), input.nextFloat());
         return loc;
     }    
+    
+    public static String toString(Vector3f v) {
+        if (v == null) {
+            return null;
+        }
+        
+        String s = "(";
+        s += v.getX() + ", ";
+        s += v.getY() + ", ";
+        s += v.getZ() + ")" ;
+        
+        return s;
+    }
+    
+    public static String toString(float[] a) {
+        if (a.length != 3) {
+            return null;
+        }
+        
+        String s = "(";
+        s += a[0] + ", ";
+        s += a[1] + ", ";
+        s += a[2] + ")" ;
+        
+        return s;
+    }
 }

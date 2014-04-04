@@ -12,7 +12,6 @@ import com.jme3.math.Ray;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Node;
-import com.jme3.system.AppSettings;
 import createacity.CityApplication;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -20,7 +19,14 @@ import java.util.Random;
 import createacity.CityHelper;
 import createacity.Vehicle;
 
-
+/**
+ * Contains behaviors for automatically controlled vehicles.
+ * Note that AI vehicles' direction is pi/2 more than what is shown in blender.
+ * So if a road direction is shown as 90 degrees in blender, it should
+ * be 180 degrees here.
+ * 
+ * @author Joseph
+ */
 public class AIVehicle {
     private Vehicle vehicle;
     private int currentRoadNumberOfLanes;
@@ -43,19 +49,25 @@ public class AIVehicle {
         this.worldNode = worldNode;
         motionPaths = new LinkedList<>();
         MotionPath path = new MotionPath();
-        path.addWayPoint(new Vector3f(100, 0, -112));
-        path.addWayPoint(new Vector3f(109, 0, -112));
-        path.addWayPoint(new Vector3f(113, 0, -98f));
+        path.addWayPoint(new Vector3f(-108, 0, -98f));
+        path.addWayPoint(new Vector3f(-104, 0, -105));
+        path.addWayPoint(new Vector3f(-97, 0, -106));
+        
         
         MotionPath path2 = new MotionPath();
-        path2.addWayPoint(new Vector3f(-108, 0, -98f));
-        path2.addWayPoint(new Vector3f(-107, 0, -110));
-        path2.addWayPoint(new Vector3f(-97, 0, -112));
+        path2.addWayPoint(new Vector3f(100, 0, -108));
+        path2.addWayPoint(new Vector3f(106, 0, -103));
+        path2.addWayPoint(new Vector3f(108, 0, -98f));
         
-        if (CityApplication.DEBUG) {
-            path.enableDebugShape(assetManager, rootNode);
-            path2.enableDebugShape(assetManager, rootNode);
-        }
+        MotionPath path3 = new MotionPath();
+        path3.addWayPoint(new Vector3f(108, 0, 98f));
+        path3.addWayPoint(new Vector3f(106, 0, 103));
+        path3.addWayPoint(new Vector3f(97.5f, 0, 108));
+        
+        MotionPath path4 = new MotionPath();
+        path4.addWayPoint(new Vector3f(-97.5f, 0, 108));
+        path4.addWayPoint(new Vector3f(-106, 0, 103));
+        path4.addWayPoint(new Vector3f(-108, 0, 98f));
         
         this.assetManager = assetManager;
         
@@ -63,7 +75,16 @@ public class AIVehicle {
         path.setCurveTension(.5f);
         path2.setCurveTension(.5f);
         motionPaths.offer(path);
-        motionPaths.offerFirst(path2);
+        motionPaths.offer(path2);
+        motionPaths.offer(path3);
+        motionPaths.offer(path4);
+        
+        if (CityApplication.DEBUG) {
+            for (MotionPath p: motionPaths) {
+                p.enableDebugShape(assetManager, rootNode);
+            }
+        }
+        
         needsReorienting = true;
     }
     
@@ -130,7 +151,7 @@ public class AIVehicle {
                 }
                 
             } else {
-                System.out.println("Desired path: " + currentMotionPath.getWayPoint(0));
+                //System.out.println("Desired path: " + currentMotionPath.getWayPoint(0));
                 Vector3f path = currentMotionPath.getWayPoint(0).subtract(vehicle.getPlayer().getPhysicsLocation());
                 Vector3f forward = vehicle.getPlayer().getForwardVector(null);
                 forward.normalizeLocal();
@@ -145,11 +166,11 @@ public class AIVehicle {
                     //steeringSensitivity += .1f;
                     //vehicle.setSteeringValue(0);
                 } else if (dir.getZ() < 0) {
-                    System.out.println("Steer left");
+                    //System.out.println("Steer left");
                     //vehicle.setSteeringValue(vehicle.getSteeringValue() + (tpf / 100f) * FastMath.abs(dir.getZ() * 10f));
                     vehicle.setSteeringValue(steeringSensitivity * dir.getZ());
                 } else if (dir.getZ() > 0) {
-                    System.out.println("Steer right");
+                    //System.out.println("Steer right");
                     //vehicle.setSteeringValue(vehicle.getSteeringValue() - (tpf / 100f) * FastMath.abs(dir.getZ() * 10f));
                     vehicle.setSteeringValue(-steeringSensitivity * dir.getZ());
                 }
@@ -248,7 +269,7 @@ public class AIVehicle {
     }
     
     private void fixToMiddleOfLane() {
-        Vector3f leftNormal = Vector3f.ZERO, rightNormal = Vector3f.ZERO, middleOfCurrentLane;
+        Vector3f leftNormal = Vector3f.ZERO, rightNormal = Vector3f.ZERO, middleOfCurrentLane = vehicle.getPlayer().getPhysicsLocation();
         Quaternion rotateLeft = new Quaternion(), rotateRight = new Quaternion();
         rotateLeft.fromAngleAxis(FastMath.HALF_PI, Vector3f.UNIT_Y);
         rotateRight.fromAngleAxis(-FastMath.HALF_PI, Vector3f.UNIT_Y);
@@ -307,7 +328,9 @@ public class AIVehicle {
                 }
             }
             
-            middleOfCurrentLane = leftNormal.add(rightNormal).divide(2f);
+            middleOfCurrentLane.setX((leftNormal.getX() + rightNormal.getX()) / 2f);
+            middleOfCurrentLane.setY((leftNormal.getY() + rightNormal.getY()) / 2f);
+            middleOfCurrentLane.setZ((leftNormal.getZ() + rightNormal.getZ()) / 2f);
             vehicle.getPlayer().setPhysicsLocation(middleOfCurrentLane);
         }
     }
@@ -317,6 +340,7 @@ public class AIVehicle {
         steeringSensitivity = .05f;
         vehicle.setSteeringValue(0);
         currentRoadNode = getCurrentRoadNode();
+        fixDirection();
         System.out.println("Current road node: " + currentRoadNode.getName());
         if (currentRoadNode != null && currentRoadNode.getChildren().size() > 0) {
             int c = currentRoadNode.getChildren().size() - 1;
@@ -338,8 +362,18 @@ public class AIVehicle {
         needsReorienting = false;
     }
     
+    private void fixDirection() {
+        float[] currentNodeDir = currentRoadNode.getLocalRotation().toAngles(null);
+        //System.out.println("Current road node direction: " + CityHelper.toString(currentRoadNode.getWorldRotation().toAngles(null)));
+        System.out.println("Car rotation before: " + CityHelper.toString(vehicle.getPlayer().getPhysicsRotation().toAngles(null)));
+        currentNodeDir[1] += FastMath.HALF_PI;
+        Quaternion q = new Quaternion();
+        q = q.fromAngles(currentNodeDir);
+        vehicle.getPlayer().setPhysicsRotation(q);
+        System.out.println("Car rotation after: " + CityHelper.toString(vehicle.getPlayer().getPhysicsRotation().toAngles(null)));
+    }
     private int determineCurrentRoadLane() {
-        int currentLane = -1;
+        int currentLane;
         String leftLaneName = "", rightLaneName = "";
         Quaternion rotateLeft = new Quaternion(), rotateRight = new Quaternion();
         rotateLeft.fromAngleAxis(FastMath.HALF_PI, Vector3f.UNIT_Y);
@@ -358,8 +392,10 @@ public class AIVehicle {
         //direction.normalizeLocal();
         Vector3f directionRight = rotateRight.mult(direction);
         //directionRight.normalizeLocal();
+        System.out.println("Right: (" + directionRight.x + " " + directionRight.y + " " + directionRight.z + ")");
         Vector3f directionLeft = rotateLeft.mult(direction);
         //directionLeft.normalizeLocal();
+        System.out.println("Left: (" + directionLeft.x + " " + directionLeft.y + " " + directionLeft.z + ")");
         
         //System.out.println("LEFT: " + directionLeft.normalizeLocal());
         //System.out.println("RIGHT: " + directionRight.normalizeLocal());
@@ -370,7 +406,7 @@ public class AIVehicle {
         ((Node)rootNode.getChild("World")).collideWith(leftRay, leftResults);
         ((Node)rootNode.getChild("World")).collideWith(rightRay, rightResults);
 
-        if (leftResults.size() > 0 && leftResults.getClosestCollision().getDistance() < 10){
+        if (leftResults.size() > 0 && leftResults.getClosestCollision().getDistance() < 100){
             leftLaneName = leftResults.getClosestCollision().getGeometry().getParent().getName();
             //System.out.println("Listing left collisions...");
             for(int i = 0; i < leftResults.size(); i++) {
@@ -378,7 +414,7 @@ public class AIVehicle {
             }
         }
         
-        if (rightResults.size() > 0 && rightResults.getClosestCollision().getDistance() < 10){
+        if (rightResults.size() > 0 && rightResults.getClosestCollision().getDistance() < 100){
             rightLaneName = rightResults.getClosestCollision().getGeometry().getParent().getName();
             //System.out.println("Listing right collisions...");
             for(int i = 0; i < rightResults.size(); i++) {
@@ -390,6 +426,7 @@ public class AIVehicle {
         
         if (!leftLaneName.startsWith("RL_")) { //Leftmost lane
             currentLane = 0;
+            System.out.println(leftLaneName);
         } else if (!rightLaneName.startsWith("RL_")) { //Rightmost lane
             currentLane = Integer.parseInt(leftLaneName.substring(leftLaneName.length()-1)) + 1;
         } else {
