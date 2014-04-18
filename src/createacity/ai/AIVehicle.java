@@ -37,6 +37,7 @@ public class AIVehicle {
     private float steeringSensitivity;
     LinkedList<MotionPath> motionPaths;
     MotionPath currentMotionPath;
+    int currentWaypointIndex;
     private AssetManager assetManager;
     Vector3f normalForwardVector = new Vector3f(0, 0, -1);
     private boolean needsReorienting = false;
@@ -140,11 +141,12 @@ public class AIVehicle {
             stayInMiddleOfCurrentLane(tpf);
         }
         else {
-            if (vehicle.getPlayer().getPhysicsLocation().distance(currentMotionPath.getWayPoint(0)) < 1f) {
-                currentMotionPath.removeWayPoint(0);
+            if (vehicle.getPlayer().getPhysicsLocation().distance(currentMotionPath.getWayPoint(currentWaypointIndex)) < 1f) {
+                //currentMotionPath.removeWayPoint(0);
+                currentWaypointIndex++;
                 System.out.println("Removing waypoint");
                 
-                if (currentMotionPath.getNbWayPoints() == 0) {
+                if (currentWaypointIndex >= currentMotionPath.getNbWayPoints()) {
                     System.out.println("Finished waypoints");
                     currentMotionPath = null;
                     needsReorienting = true;
@@ -152,7 +154,7 @@ public class AIVehicle {
                 
             } else {
                 //System.out.println("Desired path: " + currentMotionPath.getWayPoint(0));
-                Vector3f path = currentMotionPath.getWayPoint(0).subtract(vehicle.getPlayer().getPhysicsLocation());
+                Vector3f path = currentMotionPath.getWayPoint(currentWaypointIndex).subtract(vehicle.getPlayer().getPhysicsLocation());
                 Vector3f forward = vehicle.getPlayer().getForwardVector(null);
                 forward.normalizeLocal();
                 path.normalizeLocal();
@@ -181,8 +183,11 @@ public class AIVehicle {
     }
     
     private void checkIfOnPath() {
-        if (vehicle.getPlayer().getPhysicsLocation().distance(motionPaths.peek().getWayPoint(0)) < 1f) {
-            currentMotionPath = motionPaths.poll();
+        for(MotionPath p: motionPaths) {
+            if (vehicle.getPlayer().getPhysicsLocation().distance(p.getWayPoint(0)) < 1f) {
+                currentMotionPath = p;
+                currentWaypointIndex = 0;
+            }
         }
     }
     
@@ -331,7 +336,11 @@ public class AIVehicle {
             middleOfCurrentLane.setX((leftNormal.getX() + rightNormal.getX()) / 2f);
             middleOfCurrentLane.setY((leftNormal.getY() + rightNormal.getY()) / 2f);
             middleOfCurrentLane.setZ((leftNormal.getZ() + rightNormal.getZ()) / 2f);
+            System.out.println("LeftNormal: " + CityHelper.toString(leftNormal));
+            System.out.println("RightNormal: " + CityHelper.toString(rightNormal));
+            System.out.println("MiddleOfCurrentLane: " + CityHelper.toString(middleOfCurrentLane));
             vehicle.getPlayer().setPhysicsLocation(middleOfCurrentLane);
+            vehicle.getPlayer().setLinearVelocity(Vector3f.ZERO);
         }
     }
     
@@ -339,6 +348,8 @@ public class AIVehicle {
         System.out.println("Reorienting...");
         steeringSensitivity = .05f;
         vehicle.setSteeringValue(0);
+        vehicle.getPlayer().setAngularVelocity(Vector3f.ZERO);
+        vehicle.setAccelerationValue(0);
         currentRoadNode = getCurrentRoadNode();
         fixDirection();
         System.out.println("Current road node: " + currentRoadNode.getName());

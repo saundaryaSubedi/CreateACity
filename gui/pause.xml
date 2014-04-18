@@ -27,7 +27,7 @@
           <onEndScreen name="fade" length="10" start="#f" end="#0" inherit="true" />
         </effect>-->
         <panel childLayout="center" height="0%" width="100%">
-          <text text="Are you sure you want to leave the demo?" style="base-font" align="center" valign="center" color="#000f"/>
+          <text text="Are you sure you want to quit?" style="base-font" align="center" valign="center" color="#000f"/>
         </panel>
         <panel childLayout="horizontal" align="center" height="150%">
           <panel childLayout="center" height="100%" width="50%">
