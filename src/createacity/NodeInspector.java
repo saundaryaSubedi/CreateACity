@@ -45,6 +45,7 @@ public class NodeInspector {
         Node streetlights = new Node("Streetlights"); 
         Node roads = new Node("Roads");
         Node intersections = new Node("Intersections");
+        Node trafficSignals = new Node("Traffic Signals");
         
         //Process roads
         
@@ -184,6 +185,31 @@ public class NodeInspector {
                 //sensorName.
             }
             
+            //Process traffic signals and lights
+            if (n.getChild(i).getName().startsWith("SIGNAL_")) {
+                String nodeName = n.getChild(i).getName(), intersectionName;
+                int current, begin = 0;
+                current = begin = nodeName.indexOf("_") + 1;
+                while(!Character.isDigit(nodeName.charAt(current))) {
+                    current++;
+                }
+                current++;
+                //intersectionName = nodeName.substring(begin, current);
+                intersectionName = nodeName.substring(0, current);
+                System.out.println("Int name: " + intersectionName);
+                if (trafficSignals.getChild(intersectionName) == null) {
+                    trafficSignals.attachChild(new Node(intersectionName));
+                }
+                
+                copySpatial((Node)trafficSignals.getChild(intersectionName), n.getChild(i));
+                
+                for (int j = 0; j < ((Node)(n.getChild(i))).getChildren().size(); j++) {
+                    if (((Node)(n.getChild(i))).getChild(j).getName().startsWith("SIGNALLIGHT_")) {
+                       ((Node)(n.getChild(i))).detachChildAt(j);
+                       j--;
+                    }
+                }
+            }
         }
         
         if (!lastSensorName.isEmpty()) {
@@ -200,6 +226,7 @@ public class NodeInspector {
       
         
         node.attachChild(roads);
+        node.attachChild(trafficSignals);
         
         return node;
     }

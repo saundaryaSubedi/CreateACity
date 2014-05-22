@@ -16,29 +16,20 @@
 //along with New York City 3D.  If not, see <http://www.gnu.org/licenses/>.
 package createacity.states;
 
-import createacity.drivetrain.*;
 import com.jme3.app.Application;
 import com.jme3.app.state.AbstractAppState;
 import com.jme3.app.state.AppStateManager;
 import com.jme3.asset.BlenderKey;
 import com.jme3.bullet.BulletAppState;
 import com.jme3.bullet.collision.shapes.CollisionShape;
-import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
-import com.jme3.bullet.collision.shapes.MeshCollisionShape;
 import com.jme3.bullet.control.RigidBodyControl;
 import com.jme3.bullet.util.CollisionShapeFactory;
-import com.jme3.cinematic.MotionPath;
 import com.jme3.collision.CollisionResults;
-import com.jme3.input.ChaseCamera;
 import com.jme3.input.FlyByCamera;
 import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
-import com.jme3.input.controls.AnalogListener;
-import com.jme3.input.controls.JoyAxisTrigger;
-import com.jme3.input.controls.JoyButtonTrigger;
 import com.jme3.input.controls.KeyTrigger;
-import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
 import com.jme3.light.PointLight;
 import com.jme3.light.SpotLight;
@@ -47,21 +38,14 @@ import com.jme3.math.FastMath;
 import com.jme3.math.Ray;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
-import com.jme3.post.FilterPostProcessor;
-import com.jme3.post.ssao.SSAOFilter;
 import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Node;
-import com.jme3.scene.Spatial;
 import com.jme3.scene.UserData;
-import com.jme3.scene.plugins.blender.BlenderLoader;
-import com.jme3.scene.plugins.blender.objects.Properties;
 import com.jme3.shadow.BasicShadowRenderer;
 import com.jme3.util.SkyFactory;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import javax.swing.JOptionPane;
 import createacity.HUD;
@@ -71,10 +55,12 @@ import createacity.CityHelper;
 import createacity.NodeInspector;
 import createacity.Sensor;
 import createacity.StreetInfo;
-import createacity.Vehicle;
-import createacity.VehicleSensor;
 import createacity.ai.AIVehicle;
-import de.lessvoid.nifty.elements.Element;
+import createacity.intersection.DefinedSignalControl;
+import createacity.intersection.DefinedSignalControlUtility;
+import createacity.intersection.Intersection;
+import createacity.intersection.SignalizedIntersection;
+import createacity.intersection.SignalizedIntersectionUtility;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,7 +70,7 @@ import java.util.logging.Logger;
 public class MainState extends AbstractAppState implements ActionListener{
     public static final String MAIN_PAUSE = "Main - Pause";
     protected Node rootNode = new Node("MainState Root Node");
-    Node rawWorld, world, worldClone, vehicles;
+    Node rawWorld, world, worldClone, vehicles, trafficSignals;
     protected CityApplication app;
     protected HashMap<String, StreetInfo> streetInfoMap;
     protected HashMap<String, IntersectionInfo> intersectionInfoMap;
@@ -113,6 +99,9 @@ public class MainState extends AbstractAppState implements ActionListener{
    
     public static boolean findingClosestRoad = false;
     protected ArrayList<Sensor> sensors;
+    private ArrayList<Intersection> trafficSignalList;
+    private ArrayList<DefinedSignalControl> definedSignalsControlList;
+    private ArrayList<SignalizedIntersection> signalizedIntersectionList;
     
     public MainState(CityApplication app){
         this.app = (CityApplication) app;
@@ -146,6 +135,7 @@ public class MainState extends AbstractAppState implements ActionListener{
         
         vehicles = new Node("Vehicles");
         rootNode.attachChild(vehicles);
+        
         //app.getNifty().registerS
         //app.getNifty().registerScreenController(app.pauseState);
         
@@ -228,13 +218,17 @@ public class MainState extends AbstractAppState implements ActionListener{
         streetInfoMap = new HashMap<>();
         intersectionInfoMap = new HashMap<>();
         sensors = new ArrayList<>();
+        trafficSignalList = new ArrayList<>();
         
         //if (!CityApplication.DEBUG) {
             adjustPhysics();
         //}
         
+        definedSignalsControlList = DefinedSignalControlUtility.addControls("trafficSignalControls.txt");
         world = NodeInspector.buildNode(rootNode, rawWorld, streetInfoMap, intersectionInfoMap, sensors);
+        signalizedIntersectionList = SignalizedIntersectionUtility.buildIntersections(definedSignalsControlList, (Node)world.getChild("Traffic Signals"));
         
+        System.out.println("Num of intersections: " + signalizedIntersectionList.size());
         
         //NodeInspector.inspectNode(0, (Spatial)world);
     
