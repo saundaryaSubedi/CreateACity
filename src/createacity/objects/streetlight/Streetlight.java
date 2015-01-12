@@ -24,7 +24,7 @@ import java.util.ArrayList;
  * Streetlight
  */
 public class Streetlight {
-   private ArrayList<Light> removedLights = new ArrayList<Light>(); 
+   private ArrayList<Light> removedLights = new ArrayList<>(); 
    private String id; 
    
    public Streetlight(Node model){

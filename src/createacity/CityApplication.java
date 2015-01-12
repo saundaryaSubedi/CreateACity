@@ -48,6 +48,8 @@ public class CityApplication extends SimpleApplication{
     private PauseState pauseState;
     protected Nifty nifty;
     public static final boolean DEBUG = false;
+    public static final String SIGNAL_PREFIX = "SIGNAL_";
+    public static final String SIGNALLIGHT_PREFIX = "SIGNALLIGHT_";
     
     @Override
     public void initialize(){  

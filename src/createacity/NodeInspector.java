@@ -152,7 +152,7 @@ public class NodeInspector {
             }
             
             //Process streetlights
-            if (n.getChild(i).getName().startsWith("Streetlight")){
+            if (n.getChild(i).getName().startsWith("SL_")){
                 copySpatial(streetlights, n.getChild(i));
             }
             
@@ -188,15 +188,13 @@ public class NodeInspector {
             //Process traffic signals and lights
             if (n.getChild(i).getName().startsWith("SIGNAL_")) {
                 String nodeName = n.getChild(i).getName(), intersectionName;
-                int current, begin = 0;
-                current = begin = nodeName.indexOf("_") + 1;
+                int current;
+                current = nodeName.indexOf("_") + 1;
                 while(!Character.isDigit(nodeName.charAt(current))) {
                     current++;
                 }
                 current++;
-                //intersectionName = nodeName.substring(begin, current);
                 intersectionName = nodeName.substring(0, current);
-                System.out.println("Int name: " + intersectionName);
                 if (trafficSignals.getChild(intersectionName) == null) {
                     trafficSignals.attachChild(new Node(intersectionName));
                 }

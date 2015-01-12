@@ -59,8 +59,10 @@ import createacity.ai.AIVehicle;
 import createacity.intersection.DefinedSignalControl;
 import createacity.intersection.DefinedSignalControlUtility;
 import createacity.intersection.Intersection;
+import createacity.intersection.SignalControl;
 import createacity.intersection.SignalizedIntersection;
 import createacity.intersection.SignalizedIntersectionUtility;
+import createacity.objects.streetlight.StreetlightUtility;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -69,6 +71,7 @@ import java.util.logging.Logger;
  */
 public class MainState extends AbstractAppState implements ActionListener{
     public static final String MAIN_PAUSE = "Main - Pause";
+    public static final String TOGGLE_STREETLIGHTS = "Toggle Streetlights";
     protected Node rootNode = new Node("MainState Root Node");
     Node rawWorld, world, worldClone, vehicles, trafficSignals;
     protected CityApplication app;
@@ -76,11 +79,10 @@ public class MainState extends AbstractAppState implements ActionListener{
     protected HashMap<String, IntersectionInfo> intersectionInfoMap;
     protected HUD hud;
     DirectionalLight sun;
-    SpotLight spot;
     private Vector3f lightDir = new Vector3f(-.5f, -.5f, -.5f); // same as light source
     BasicShadowRenderer bsr;
     protected FlyByCamera flyCam; 
-    private final float FLYCAM_SPEED = 100;
+    private final float FLYCAM_SPEED = 50;
     protected BulletAppState bulletAppState;
    
     private float min = 1, max = -1;
@@ -102,6 +104,8 @@ public class MainState extends AbstractAppState implements ActionListener{
     private ArrayList<Intersection> trafficSignalList;
     private ArrayList<DefinedSignalControl> definedSignalsControlList;
     private ArrayList<SignalizedIntersection> signalizedIntersectionList;
+    
+    private boolean streetlightsOn;
     
     public MainState(CityApplication app){
         this.app = (CityApplication) app;
@@ -144,9 +148,9 @@ public class MainState extends AbstractAppState implements ActionListener{
         initWorld();
         rootNode.attachChild(rawWorld);
         PointLight al = new PointLight();
-        al.setColor(ColorRGBA.White.mult(.5f));
+        al.setColor(ColorRGBA.White.mult(.1f));
         al.setPosition(new Vector3f(0, 12, 8));
-        rootNode.addLight(al);
+        //rootNode.addLight(al);
         CollisionShape level_shape = CollisionShapeFactory.createMeshShape(rawWorld);
         
         RigidBodyControl cityControl = new RigidBodyControl(level_shape, 0);
@@ -169,15 +173,6 @@ public class MainState extends AbstractAppState implements ActionListener{
         app.getCamera().setFrustumFar(5000);
         app.getCamera().setLocation(new Vector3f(90, 10, -112f));
         
-        spot = new SpotLight();
-        spot.setSpotRange(100f);                           // distance
-        spot.setSpotInnerAngle(15f * FastMath.DEG_TO_RAD); // inner light cone (central beam)
-        spot.setSpotOuterAngle(35f * FastMath.DEG_TO_RAD); // outer light cone (edge of the light)
-        spot.setColor(ColorRGBA.White.mult(1.3f));         // light color
-        spot.setPosition(app.getCamera().getLocation());               // shine from camera loc
-        spot.setDirection(app.getCamera().getDirection());             // shine forward from camera loc
-        rootNode.addLight(spot);
-        
         testAI = new AIVehicle(rootNode, world, new Vector3f(-107, 0, 95f), new Vector3f(0, FastMath.PI, 0), new Vector3f(1.79578f, 1.47574f, 4.5974f), app.getInputManager(), app.getViewPort(), app.getAssetManager(), vehicles, bulletAppState.getPhysicsSpace());
         app.getCamera().lookAt(testAI.getVehicle().getPlayer().getPhysicsLocation(), Vector3f.UNIT_Y);
         testAI.reorient();
@@ -189,7 +184,7 @@ public class MainState extends AbstractAppState implements ActionListener{
             bulletAppState.getPhysicsSpace().enableDebug(app.getAssetManager());    
         }
         
-        
+        NodeInspector.inspectNode(0, world.getChild("Streetlights"));
         
     }
     
@@ -205,12 +200,14 @@ public class MainState extends AbstractAppState implements ActionListener{
     private void addInputMappings() {
         InputManager inputManager = app.getInputManager();
         inputManager.addMapping(MAIN_PAUSE, new KeyTrigger(KeyInput.KEY_ESCAPE));
-        inputManager.addListener(this, MAIN_PAUSE);
+        inputManager.addMapping(TOGGLE_STREETLIGHTS, new KeyTrigger(KeyInput.KEY_L));
+        inputManager.addListener(this, MAIN_PAUSE, TOGGLE_STREETLIGHTS);
     }
     
     private void removeInputMappings() {
         InputManager inputManager = app.getInputManager();
         inputManager.deleteMapping(MAIN_PAUSE);
+        inputManager.deleteMapping(TOGGLE_STREETLIGHTS);
         inputManager.removeListener(this);
     }
     
@@ -224,9 +221,16 @@ public class MainState extends AbstractAppState implements ActionListener{
             adjustPhysics();
         //}
         
-        definedSignalsControlList = DefinedSignalControlUtility.addControls("trafficSignalControls.txt");
         world = NodeInspector.buildNode(rootNode, rawWorld, streetInfoMap, intersectionInfoMap, sensors);
+        definedSignalsControlList = DefinedSignalControlUtility.addControls("trafficSignalControls.txt",(Node)world.getChild("Traffic Signals"));
         signalizedIntersectionList = SignalizedIntersectionUtility.buildIntersections(definedSignalsControlList, (Node)world.getChild("Traffic Signals"));
+        
+        for(SignalControl s: definedSignalsControlList) {
+            s.begin(rawWorld);
+        }
+        
+        StreetlightUtility.initStreetlights((Node)world.getChild("Streetlights"));
+        streetlightsOn = false;
         
         System.out.println("Num of intersections: " + signalizedIntersectionList.size());
         
@@ -252,7 +256,7 @@ public class MainState extends AbstractAppState implements ActionListener{
         sun = new DirectionalLight();
         sun.setDirection(lightDir);
         sun.setColor(ColorRGBA.White.clone().multLocal(1.7f));
-        rootNode.addLight(sun);
+        //rootNode.addLight(sun);
     
     }
     
@@ -284,9 +288,6 @@ public class MainState extends AbstractAppState implements ActionListener{
             app.getCamera().setRotation(testAI.getVehicle().getCarNode().getWorldRotation());
         }
         
-        spot.setPosition(app.getCamera().getLocation());
-        spot.setDirection(app.getCamera().getDirection());
-        
         IntersectionInfo intersection = intersectionInfoMap.get("NorthAve_EastAve_0");
         Integer[] intersectionInt = intersection.getRoadIntersections().get("NorthAve");
         
@@ -296,6 +297,10 @@ public class MainState extends AbstractAppState implements ActionListener{
             sensor.check(vehicles, tpf);
         }
         //System.out.println("Sensor activated? " + sensor.isHot());
+        
+        for(SignalControl s: definedSignalsControlList) {
+            s.update(tpf, rawWorld);
+        }
         
         rootNode.updateLogicalState(tpf);
         rootNode.updateGeometricState();
@@ -347,6 +352,17 @@ public class MainState extends AbstractAppState implements ActionListener{
         
         if (name.equals(MAIN_PAUSE) && !isPressed) {
             bulletAppState.setEnabled(true);
+            
+        }
+        
+        if (name.equals(TOGGLE_STREETLIGHTS) && !isPressed) {
+            if (streetlightsOn) {
+                streetlightsOn = false;
+                StreetlightUtility.turnOffAllStreetlights(rootNode);
+            } else {
+                streetlightsOn = true;
+                StreetlightUtility.turnOnAllStreetlights(rootNode);
+            }
             
         }
             
