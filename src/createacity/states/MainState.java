@@ -19,11 +19,7 @@ package createacity.states;
 import com.jme3.app.Application;
 import com.jme3.app.state.AbstractAppState;
 import com.jme3.app.state.AppStateManager;
-import com.jme3.asset.BlenderKey;
 import com.jme3.bullet.BulletAppState;
-import com.jme3.bullet.collision.shapes.CollisionShape;
-import com.jme3.bullet.control.RigidBodyControl;
-import com.jme3.bullet.util.CollisionShapeFactory;
 import com.jme3.collision.CollisionResults;
 import com.jme3.input.FlyByCamera;
 import com.jme3.input.InputManager;
@@ -32,17 +28,12 @@ import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.light.DirectionalLight;
 import com.jme3.light.PointLight;
-import com.jme3.light.SpotLight;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Ray;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
-import com.jme3.renderer.queue.RenderQueue.ShadowMode;
 import com.jme3.scene.Node;
-import com.jme3.scene.UserData;
-import com.jme3.shadow.BasicShadowRenderer;
-import com.jme3.util.SkyFactory;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -52,16 +43,13 @@ import createacity.HUD;
 import createacity.IntersectionInfo;
 import createacity.CityApplication;
 import createacity.CityHelper;
-import createacity.NodeInspector;
 import createacity.Sensor;
 import createacity.StreetInfo;
 import createacity.ai.AIVehicle;
 import createacity.intersection.DefinedSignalControl;
-import createacity.intersection.DefinedSignalControlUtility;
 import createacity.intersection.Intersection;
 import createacity.intersection.SignalControl;
 import createacity.intersection.SignalizedIntersection;
-import createacity.intersection.SignalizedIntersectionUtility;
 import createacity.objects.streetlight.StreetlightUtility;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -69,25 +57,28 @@ import java.util.logging.Logger;
 /**
  * Main state
  */
-public class MainState extends AbstractAppState implements ActionListener{
+public class MainState extends AbstractAppState implements ActionListener {
+    private static final Logger logger = Logger.getLogger(MainState.class.getName());
     public static final String MAIN_PAUSE = "Main - Pause";
     public static final String TOGGLE_STREETLIGHTS = "Toggle Streetlights";
-    protected Node rootNode = new Node("MainState Root Node");
-    Node rawWorld, world, worldClone, vehicles, trafficSignals;
+    protected Node rootNode;
+    
+    private Node rawWorld, trafficSignals;
+    protected Node vehicles, world;
+    
     protected CityApplication app;
     protected HashMap<String, StreetInfo> streetInfoMap;
     protected HashMap<String, IntersectionInfo> intersectionInfoMap;
-    protected HUD hud;
-    DirectionalLight sun;
+    
+    private DirectionalLight sun;
     private Vector3f lightDir = new Vector3f(-.5f, -.5f, -.5f); // same as light source
-    BasicShadowRenderer bsr;
-    protected FlyByCamera flyCam; 
-    private final float FLYCAM_SPEED = 50;
-    protected BulletAppState bulletAppState;
+     
+    public static final float FLYCAM_SPEED = 50f;
+    
+    private AIVehicle testAI;
+    protected HUD hud;
    
     private float min = 1, max = -1;
-    
-    AIVehicle testAI;
     
     public static ScheduledThreadPoolExecutor executor;
     
@@ -96,171 +87,73 @@ public class MainState extends AbstractAppState implements ActionListener{
     
     public static final boolean firstPersonAICam = false;
     public Vector3f loc = Vector3f.ZERO;
-    String closestRoad;
+    private String closestRoad;
     
-   
+    protected FlyByCamera flyCam;
     public static boolean findingClosestRoad = false;
     protected ArrayList<Sensor> sensors;
     private ArrayList<Intersection> trafficSignalList;
     private ArrayList<DefinedSignalControl> definedSignalsControlList;
     private ArrayList<SignalizedIntersection> signalizedIntersectionList;
     
+    protected BulletAppState bulletAppState;
+    private PointLight al;
+    
     private boolean streetlightsOn;
     
     public MainState(CityApplication app){
-        this.app = (CityApplication) app;
-
-        InputManager inputManager = app.getInputManager();               
+        this.app = (CityApplication) app;   
         
-        flyCam = new FlyByCamera(app.getCamera());
-        flyCam.setMoveSpeed(FLYCAM_SPEED);
-        flyCam.setDragToRotate(false);
-        flyCam.registerWithInput(inputManager);       
+        this.testAI = this.app.getTestAIVehicle();
+        this.hud = this.app.getHUD();
+        this.rootNode = this.app.getRootNode();
+        this.rawWorld = this.app.getRawWorldNode();
+        this.flyCam = this.app.getFlyByCamera();
+        this.bulletAppState = this.app.getBulletAppState();
+        this.al = this.app.getAl();
+        this.streetInfoMap = this.app.getStreetInfoMap();
+        this.intersectionInfoMap = this.app.getIntersectionInfoMap();
+        this.definedSignalsControlList = this.app.getDefinedSignalsControlList();
+        this.sensors = this.app.getSensors();
+        this.sun = this.app.getSun();
+        this.vehicles = this.app.getVehiclesNode();
         
-        hud = new HUD(this.app.getSettings());
-        
-        //rootNode.attachChild(SkyFactory.createSky(app.getAssetManager(), "Scenes/Beach/FullskiesSunset0068.dds", false));
-        
-        BlenderKey blenderKey = new BlenderKey("Models/City/City.blend");
-        blenderKey.setLoadObjectProperties(true);
-        rawWorld = (Node)app.getAssetManager().loadAsset(blenderKey);
-        
-        /* This constructor creates a new executor with a core pool size of 4. */
-        executor = new ScheduledThreadPoolExecutor(4);
-        
-        bulletAppState = new BulletAppState();
-        app.getStateManager().attach(bulletAppState);
-        if (CityApplication.DEBUG) {
-            bulletAppState.getPhysicsSpace().enableDebug(app.getAssetManager());
-        }
-        
-        rawWorld.setName("World");
-        rawWorld.setShadowMode(ShadowMode.CastAndReceive);
-        
-        vehicles = new Node("Vehicles");
-        rootNode.attachChild(vehicles);
-        
-        //app.getNifty().registerS
-        //app.getNifty().registerScreenController(app.pauseState);
-        
-        Logger.getLogger("").setLevel(Level.SEVERE);
-        
-        initWorld();
-        rootNode.attachChild(rawWorld);
-        PointLight al = new PointLight();
-        al.setColor(ColorRGBA.White.mult(.1f));
-        al.setPosition(new Vector3f(0, 12, 8));
-        //rootNode.addLight(al);
-        CollisionShape level_shape = CollisionShapeFactory.createMeshShape(rawWorld);
-        
-        RigidBodyControl cityControl = new RigidBodyControl(level_shape, 0);
-        rawWorld.addControl(cityControl);
-        bulletAppState.getPhysicsSpace().add(cityControl);
-        
-        rootNode.attachChild(SkyFactory.createSky(
-            app.getAssetManager(), "Textures/Sky/Bright/BrightSky.dds", false));
-        
-        //flyCam.unregisterInput();
-        //flyCam.setEnabled(false);
-       
-
-        //carCam.setDefaultDistance(10f);
-        //carCam.setMaxDistance(15f);
-        bsr = new BasicShadowRenderer(app.getAssetManager(), 256);
-        //app.getViewPort().addProcessor(bsr);
-        rootNode.setShadowMode(ShadowMode.Off);
-        initSun();
-        app.getCamera().setFrustumFar(5000);
-        app.getCamera().setLocation(new Vector3f(90, 10, -112f));
-        
-        testAI = new AIVehicle(rootNode, world, new Vector3f(-107, 0, 95f), new Vector3f(0, FastMath.PI, 0), new Vector3f(1.79578f, 1.47574f, 4.5974f), app.getInputManager(), app.getViewPort(), app.getAssetManager(), vehicles, bulletAppState.getPhysicsSpace());
-        app.getCamera().lookAt(testAI.getVehicle().getPlayer().getPhysicsLocation(), Vector3f.UNIT_Y);
-        testAI.reorient();
-        testAI.generateRandomDestination();
-        
-        closestRoad = null;
-        
-        if (CityApplication.DEBUG) {
-            bulletAppState.getPhysicsSpace().enableDebug(app.getAssetManager());    
-        }
-        
-        NodeInspector.inspectNode(0, world.getChild("Streetlights"));
-        
+        streetlightsOn = false;
+        logger.log(Level.INFO, "Finished initializing");
     }
     
     @Override
     public void initialize(AppStateManager stateManager, Application app){
-        super.initialize(stateManager, app); 
-        
-        
-        
-        
+        super.initialize(stateManager, app);   
     }
     
     private void addInputMappings() {
         InputManager inputManager = app.getInputManager();
-        inputManager.addMapping(MAIN_PAUSE, new KeyTrigger(KeyInput.KEY_ESCAPE));
-        inputManager.addMapping(TOGGLE_STREETLIGHTS, new KeyTrigger(KeyInput.KEY_L));
+        
+        if (!inputManager.hasMapping(MAIN_PAUSE)) {
+            inputManager.addMapping(MAIN_PAUSE, new KeyTrigger(KeyInput.KEY_ESCAPE));
+        }
+        
+        if (!inputManager.hasMapping(TOGGLE_STREETLIGHTS)) {
+            inputManager.addMapping(TOGGLE_STREETLIGHTS, new KeyTrigger(KeyInput.KEY_L));
+        }
+        
         inputManager.addListener(this, MAIN_PAUSE, TOGGLE_STREETLIGHTS);
     }
     
     private void removeInputMappings() {
         InputManager inputManager = app.getInputManager();
-        inputManager.deleteMapping(MAIN_PAUSE);
-        inputManager.deleteMapping(TOGGLE_STREETLIGHTS);
+        
+        if (inputManager.hasMapping(MAIN_PAUSE)) {
+            inputManager.deleteMapping(MAIN_PAUSE);
+        }
+        
+        if (!inputManager.hasMapping(TOGGLE_STREETLIGHTS)) {
+            inputManager.deleteMapping(TOGGLE_STREETLIGHTS);
+        }
+        
         inputManager.removeListener(this);
-    }
-    
-    private void initWorld() {
-        streetInfoMap = new HashMap<>();
-        intersectionInfoMap = new HashMap<>();
-        sensors = new ArrayList<>();
-        trafficSignalList = new ArrayList<>();
-        
-        //if (!CityApplication.DEBUG) {
-            adjustPhysics();
-        //}
-        
-        world = NodeInspector.buildNode(rootNode, rawWorld, streetInfoMap, intersectionInfoMap, sensors);
-        definedSignalsControlList = DefinedSignalControlUtility.addControls("trafficSignalControls.txt",(Node)world.getChild("Traffic Signals"));
-        signalizedIntersectionList = SignalizedIntersectionUtility.buildIntersections(definedSignalsControlList, (Node)world.getChild("Traffic Signals"));
-        
-        for(SignalControl s: definedSignalsControlList) {
-            s.begin(rawWorld);
-        }
-        
-        StreetlightUtility.initStreetlights((Node)world.getChild("Streetlights"));
-        streetlightsOn = false;
-        
-        System.out.println("Num of intersections: " + signalizedIntersectionList.size());
-        
-        //NodeInspector.inspectNode(0, (Spatial)world);
-    
-    }
-    
-    private void adjustPhysics() {
-        for(int i = 0; i < rawWorld.getChildren().size(); i++) {
-            if (rawWorld.getChild(i).getName().startsWith("RL_")) {
-                rawWorld.getChild(i).setUserData(UserData.JME_PHYSICSIGNORE, true);
-                for(int j = 0; j < ((Node)rawWorld.getChild(i)).getChildren().size(); j++) {
-                    ((Node)rawWorld.getChild(i)).getChild(j).setUserData(UserData.JME_PHYSICSIGNORE, true);
-                }
-            }
-        }
-    }
-    
-    
-    
-    private void initSun(){
-        /** A white, directional light source */
-        sun = new DirectionalLight();
-        sun.setDirection(lightDir);
-        sun.setColor(ColorRGBA.White.clone().multLocal(1.7f));
-        //rootNode.addLight(sun);
-    
-    }
-    
-    
+    }   
     
     @Override
     public void update(float tpf){
@@ -270,14 +163,16 @@ public class MainState extends AbstractAppState implements ActionListener{
         
         if (findingClosestRoad) {
             loc = CityHelper.getLocation();
-           closestRoad = getNearestStreet();
-        if(closestRoad != null){
-            //.... Success! Let's process the wayList and move the NPC...
-            JOptionPane.showMessageDialog(null, "Nearest street: " + closestRoad, "Nearest Street", JOptionPane.INFORMATION_MESSAGE);
-            closestRoad = null;
-            findingClosestRoad = false;
+            closestRoad = getNearestStreet();
+            
+            if(closestRoad != null){
+                //.... Success! Let's process the wayList and move the NPC...
+                JOptionPane.showMessageDialog(null, "Nearest street: " + closestRoad, "Nearest Street", JOptionPane.INFORMATION_MESSAGE);
+                closestRoad = null;
+                findingClosestRoad = false;
+            }
         }
-        }
+        
         hud.update(rootNode, app.getCamera(), app.getNifty(), streetInfoMap);
         setSunDir();
         testAI.step(tpf);
@@ -288,7 +183,7 @@ public class MainState extends AbstractAppState implements ActionListener{
             app.getCamera().setRotation(testAI.getVehicle().getCarNode().getWorldRotation());
         }
         
-        IntersectionInfo intersection = intersectionInfoMap.get("NorthAve_EastAve_0");
+        IntersectionInfo intersection = intersectionInfoMap.get("NorthAve_EastAve_1");
         Integer[] intersectionInt = intersection.getRoadIntersections().get("NorthAve");
         
         updateMap();
@@ -333,7 +228,6 @@ public class MainState extends AbstractAppState implements ActionListener{
             sun.setColor(ColorRGBA.White);
         
         sun.setDirection(lightDir);
-        bsr.setDirection(lightDir.normalizeLocal()); //Update shadow direction
     }
             
     @Override
@@ -341,12 +235,12 @@ public class MainState extends AbstractAppState implements ActionListener{
         
         if (name.equals(MAIN_PAUSE) && isPressed) {
                 
-                    //app.getStateManager().detach(app.mainState);
-                    setEnabled(false);
-                    app.getPauseState().setEnabled(true);
-                    //app.getInputManager().clearMappings();
-                    //app.getNifty().fromXml("gui/hud.xml", "pause");
-                    //Element exitPopup = app.getNifty().createPopup("exitPopup");
+            //app.getStateManager().detach(app.mainState);
+            setEnabled(false);
+            app.getPauseState().setEnabled(true);
+            //app.getInputManager().clearMappings();
+            //app.getNifty().fromXml("gui/hud.xml", "pause");
+            //Element exitPopup = app.getNifty().createPopup("exitPopup");
                     
         }
         
@@ -358,10 +252,15 @@ public class MainState extends AbstractAppState implements ActionListener{
         if (name.equals(TOGGLE_STREETLIGHTS) && !isPressed) {
             if (streetlightsOn) {
                 streetlightsOn = false;
+                rootNode.addLight(sun);
+                rootNode.removeLight(al);
                 StreetlightUtility.turnOffAllStreetlights(rootNode);
             } else {
                 streetlightsOn = true;
+                rootNode.removeLight(sun);
+                rootNode.addLight(al);
                 StreetlightUtility.turnOnAllStreetlights(rootNode);
+                
             }
             
         }
@@ -423,23 +322,5 @@ public class MainState extends AbstractAppState implements ActionListener{
     @Override
     public void stateDetached(AppStateManager stateManager) {       
         
-    }
-    
-    /**
-     * Retrieves root node
-     * @return the root node
-     *
-     */
-    public Node getRootNode(){
-        return rootNode;
-    }
-    
-    /**
-     * Retrieves the FlyCam object
-     * @return the FlyCam object
-     *
-     */
-    public FlyByCamera getFlyByCamera() {
-        return flyCam;
-    }    
+    }  
 }
