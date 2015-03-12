@@ -249,12 +249,12 @@ public class CityApplication extends SimpleApplication implements ScreenControll
         
             //rootNode.attachChild(SkyFactory.createSky(app.getAssetManager(), "Scenes/Beach/FullskiesSunset0068.dds", false));
         
-            BlenderKey blenderKey = new BlenderKey("Models/City/City.blend");
+            BlenderKey blenderKey = new BlenderKey("City.blend");
             blenderKey.setLoadObjectProperties(true);
         
             long timer = System.currentTimeMillis();
-            //rawWorld = (Node)app.getAssetManager().loadAsset(blenderKey);
-            rawWorld = (Node) assetManager.loadModel("City.j3o");
+            rawWorld = (Node)assetManager.loadAsset(blenderKey);
+            //rawWorld = (Node) assetManager.loadModel("City.j3o");
             logger.log(Level.INFO, "City finished loading in {0} ms", System.currentTimeMillis() - timer);
         
             bulletAppState = new BulletAppState();
