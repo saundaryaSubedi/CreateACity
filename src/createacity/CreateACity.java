@@ -27,7 +27,7 @@ public class CreateACity{
     public static void main(String[] args) {
         CityApplication app = new CityApplication();
         AppSettings settings = new AppSettings(true);
-        settings.setTitle("Create a City 2015-01-23");
+        settings.setTitle("Create a City 2015-03-13");
         settings.setWidth(800);
         settings.setHeight(600);
         settings.setUseJoysticks(true);

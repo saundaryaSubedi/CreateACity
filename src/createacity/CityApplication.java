@@ -121,6 +121,7 @@ public class CityApplication extends SimpleApplication implements ScreenControll
         
         NiftyJmeDisplay niftyDisplay = new NiftyJmeDisplay(assetManager, inputManager, audioRenderer, guiViewPort);
         nifty = niftyDisplay.getNifty();
+        nifty.enableAutoScaling(800, 600);
         guiViewPort.addProcessor(niftyDisplay);
         
         if (inputManager.hasMapping(INPUT_MAPPING_EXIT)) {
