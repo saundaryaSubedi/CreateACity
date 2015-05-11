@@ -43,6 +43,7 @@ import createacity.HUD;
 import createacity.IntersectionInfo;
 import createacity.CityApplication;
 import createacity.CityHelper;
+import createacity.NodeInspector;
 import createacity.Sensor;
 import createacity.StreetInfo;
 import createacity.ai.AIVehicle;
@@ -171,7 +172,7 @@ public class MainState extends AbstractAppState implements ActionListener {
                 closestRoad = null;
                 findingClosestRoad = false;
             }
-        }
+        }               
         
         hud.update(rootNode, app.getCamera(), app.getNifty(), streetInfoMap);
         setSunDir();

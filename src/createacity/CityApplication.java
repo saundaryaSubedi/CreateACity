@@ -222,9 +222,15 @@ public class CityApplication extends SimpleApplication implements ScreenControll
                 // and may not be modified from any other thread anymore!
                 load = false;
                 
+                rootNode.attachChild(vehicles);
+                rootNode.attachChild(rawWorld);
+                rootNode.attachChild(SkyFactory.createSky(
+                    assetManager, "Textures/Sky/Bright/BrightSky.dds", false));
+
+                rootNode.setShadowMode(RenderQueue.ShadowMode.Off);
                 mainState = new MainState(this);
-                stateManager.attach(mainState);    
-                mainState.setEnabled(true);
+                //stateManager.attach(mainState);    
+                //mainState.setEnabled(true);
                 viewPort.attachScene(rootNode);
             }
         }
@@ -254,8 +260,8 @@ public class CityApplication extends SimpleApplication implements ScreenControll
             blenderKey.setLoadObjectProperties(true);
         
             long timer = System.currentTimeMillis();
-            rawWorld = (Node)assetManager.loadAsset(blenderKey);
-            //rawWorld = (Node) assetManager.loadModel("City.j3o");
+            //rawWorld = (Node)assetManager.loadAsset(blenderKey);
+            rawWorld = (Node) assetManager.loadModel("City.j3o");
             logger.log(Level.INFO, "City finished loading in {0} ms", System.currentTimeMillis() - timer);
         
             bulletAppState = new BulletAppState();
@@ -268,7 +274,7 @@ public class CityApplication extends SimpleApplication implements ScreenControll
             rawWorld.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
 
             vehicles = new Node("Vehicles");
-            rootNode.attachChild(vehicles);
+            
 
             //Logger.getLogger("").setLevel(Level.SEVERE);
         
@@ -276,7 +282,7 @@ public class CityApplication extends SimpleApplication implements ScreenControll
             
             initWorld();
             
-            rootNode.attachChild(rawWorld);
+            
             al = new PointLight();
             al.setColor(ColorRGBA.White.mult(.1f));
             al.setPosition(new Vector3f(0, 12, 8));
@@ -291,10 +297,7 @@ public class CityApplication extends SimpleApplication implements ScreenControll
             
             setProgress(0.6f, "Setting up shadows and lights");
 
-            rootNode.attachChild(SkyFactory.createSky(
-            assetManager, "Textures/Sky/Bright/BrightSky.dds", false));
-
-            rootNode.setShadowMode(RenderQueue.ShadowMode.Off);
+           
             initSun();
             cam.setFrustumFar(5000);
             cam.setLocation(new Vector3f(90, 10, -112f));
@@ -325,10 +328,12 @@ public class CityApplication extends SimpleApplication implements ScreenControll
         //if (!CityApplication.DEBUG) {
             adjustPhysics();
         //}
-        
+            
         world = NodeInspector.buildNode(rootNode, rawWorld, streetInfoMap, intersectionInfoMap, sensors);
         definedSignalsControlList = DefinedSignalControlUtility.addControls("trafficSignalControls.txt",(Node)world.getChild("Traffic Signals"));
         signalizedIntersectionList = SignalizedIntersectionUtility.buildIntersections(definedSignalsControlList, (Node)world.getChild("Traffic Signals"));
+        
+        
         
         for(SignalControl s: definedSignalsControlList) {
             s.begin(rawWorld);

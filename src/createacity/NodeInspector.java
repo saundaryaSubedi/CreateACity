@@ -70,6 +70,8 @@ public class NodeInspector {
         } 
         
         for(int i = 0; i < n.getChildren().size(); i++){
+            
+            System.out.println("Processing " + n.getChild(i).getName());
             //Roads
             if (n.getChild(i).getName().startsWith("R_")){
                 
@@ -77,6 +79,7 @@ public class NodeInspector {
                 char start = n.getChild(i).getName().charAt(2);
                 start = Character.toUpperCase(start);
                 if (Character.isDigit(start)){
+                    System.out.println("Starts with a digit");
                     parentNode = (Node)roads.getChild((int) start);
                 }
                 else if (Character.getType(start) == Character.UPPERCASE_LETTER){                  
@@ -85,6 +88,7 @@ public class NodeInspector {
                 else {
                     throw new IllegalArgumentException(n.getChild(i).getName().substring(2) + " does not start with a letter or number!");
                 }
+                System.out.println("Road's parent node is: " + parentNode.getName());
 
                 if (!n.getChild(i).getUserDataKeys().isEmpty()) {
                     int loc = getIndexOfMatchingName(parentNode, n.getChild(i).getUserData("roadName") + "_" + n.getChild(i).getUserData("borough"));
@@ -208,8 +212,12 @@ public class NodeInspector {
                     }
                 }
             }
+            
+             System.out.println("*");
         }
         
+       
+        System.out.println("Outside of for loop");
         if (!lastSensorName.isEmpty()) {
             //Add last sensor
             Vector3f[][] thisSensorInfo = new Vector3f[sensorInfo.size()][2];
