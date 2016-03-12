@@ -46,6 +46,7 @@ public class NodeInspector {
         Node roads = new Node("Roads");
         Node intersections = new Node("Intersections");
         Node trafficSignals = new Node("Traffic Signals");
+        System.out.println("Nodes initialized");
         
         //Process roads
         
@@ -80,7 +81,7 @@ public class NodeInspector {
                 start = Character.toUpperCase(start);
                 if (Character.isDigit(start)){
                     System.out.println("Starts with a digit");
-                    parentNode = (Node)roads.getChild((int) start);
+                    parentNode = (Node)roads.getChild(start - '0');
                 }
                 else if (Character.getType(start) == Character.UPPERCASE_LETTER){                  
                     parentNode = (Node)roads.getChild(((int) start) - 55);

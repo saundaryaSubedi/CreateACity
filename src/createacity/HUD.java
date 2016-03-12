@@ -107,7 +107,7 @@ public class HUD{
             nextStreet = "";
         }
         
-        if (!nifty.getCurrentScreen().isNull() && nifty.getCurrentScreen().getScreenId().equals("hud")){           
+        if (nifty.getCurrentScreen() != null && nifty.getCurrentScreen().getScreenId().equals("hud")){           
             nifty.getCurrentScreen().findNiftyControl("currentStreet", Label.class).setText(currentStreet);
             nifty.getCurrentScreen().findNiftyControl("nextStreet", Label.class).setText(nextStreet);
             nifty.getCurrentScreen().findNiftyControl("currentSpeedKPH", Label.class).setText("");                
@@ -180,7 +180,7 @@ public class HUD{
                     if (!roadNames.isEmpty()) {
                         intersectionName = roadNames.toString().replace("[", "").replace("]", "").replace(", ", "/");
 
-                        if (!nifty.getCurrentScreen().isNull() && nifty.getCurrentScreen().getScreenId().equals("hud")){     
+                        if (nifty.getCurrentScreen() != null && nifty.getCurrentScreen().getScreenId().equals("hud")){     
                             currentStreet = intersectionName;
                             nextStreet = ""; 
                         }
@@ -201,7 +201,7 @@ public class HUD{
             nextStreet = "";
         } 
         
-        if (!nifty.getCurrentScreen().isNull() && nifty.getCurrentScreen().getScreenId().equals("hud")){
+        if (nifty.getCurrentScreen() != null && nifty.getCurrentScreen().getScreenId().equals("hud")){
             nifty.getCurrentScreen().findNiftyControl("currentStreet", Label.class).setText(currentStreet);
             nifty.getCurrentScreen().findNiftyControl("nextStreet", Label.class).setText(nextStreet);
             nifty.getCurrentScreen().findNiftyControl("currentTime", Label.class).setText(currentTime);                              

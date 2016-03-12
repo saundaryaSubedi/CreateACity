@@ -354,18 +354,28 @@ public class AIVehicle {
         fixDirection();
         System.out.println("Current road node: " + currentRoadNode.getName());
         if (currentRoadNode != null && currentRoadNode.getChildren().size() > 0) {
-            int c = currentRoadNode.getChildren().size() - 1;
             
-            while (!currentRoadNode.getChild(c).getName().startsWith("RL_")) {
-                c--;
+            int c;
+            
+            for (c = currentRoadNode.getChildren().size() - 1; c >= 0; c--) {
+                if (currentRoadNode.getChild(c).getName().startsWith("RL_")) {
+                    break;
+                }
             }
-            currentRoadNumberOfLanes = 2 + Integer.parseInt(currentRoadNode.getChild(c).getName().substring(currentRoadNode.getChild(c).getName().length()-1));
-            currentRoadLane = determineCurrentRoadLane();           
-            currentSpeedLimit = getCurrentRoadSpeedLimit();
-            fixToMiddleOfLane();
+            
             System.out.println("Current road: " + currentRoadNode.getName());
-            System.out.println("Number of lanes: " + currentRoadNumberOfLanes);
-            System.out.println("Current lane: " + currentRoadLane);
+            
+            if (c >= 0) {
+                currentRoadNumberOfLanes = 2 + Integer.parseInt(currentRoadNode.getChild(c).getName().substring(currentRoadNode.getChild(c).getName().length()-1));
+                currentRoadLane = determineCurrentRoadLane();           
+                
+                fixToMiddleOfLane();
+                
+                System.out.println("Number of lanes: " + currentRoadNumberOfLanes);
+                System.out.println("Current lane: " + currentRoadLane);
+            }
+            
+            currentSpeedLimit = getCurrentRoadSpeedLimit();
             System.out.println("Speed limit: " + currentSpeedLimit);
             System.out.println("Front location: " + getFrontVehicleLoc());
         }
@@ -456,8 +466,9 @@ public class AIVehicle {
         CollisionResults results = new CollisionResults();
 
         ray = new Ray(vehicle.getPlayer().getPhysicsLocation(), new Vector3f(0, -1, 0));
- 
-        ((Node)rootNode.getChild("World")).collideWith(ray, results);
+        Node worldNodeLocal = (Node)rootNode.getChild("World");
+        
+        worldNode.collideWith(ray, results);
 
         if (results.size() > 0 && results.getClosestCollision().getDistance() < 10){
             s = results.getClosestCollision().getGeometry().getParent().getName();
@@ -476,7 +487,7 @@ public class AIVehicle {
         char start = currentRoad.charAt(2);
         start = Character.toUpperCase(start);
         if (Character.isDigit(start)){
-            parentNode = (Node)roadsNode.getChild((int) start);
+            parentNode = (Node)roadsNode.getChild(start - '0');
         }
         else if (Character.getType(start) == Character.UPPERCASE_LETTER){                  
             parentNode = (Node)roadsNode.getChild(((int) start) - 55);

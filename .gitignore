@@ -8,6 +8,7 @@ build.xml
 manifest.mf
 *.jar
 *.svn
+*.dll
 
 
 #################
@@ -230,3 +231,4 @@ pip-log.txt
 !/build.xml
 !/manifest.mf
 !/BrowserLauncher2-1_3.jar
+/nbproject/private/

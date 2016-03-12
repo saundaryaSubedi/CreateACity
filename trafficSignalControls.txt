@@ -4,10 +4,10 @@ SIGNAL_HallHwy_WestAve_0_0_0_0
 SIGNAL_HallHwy_WestAve_0_0_0_1
 SIGNAL_HallHwy_WestAve_0_0_1_0
 SIGNAL_HallHwy_WestAve_0_0_1_1
-20000 3500 1000
+20000 3000 1000
 SIGNAL_HallHwy_WestAve_0_1_0
 SIGNAL_HallHwy_WestAve_0_1_1
-15000 3000 1000
+15000 2000 1000
 SIGNAL_HallHwy_EastAve_0
 0 2
 SIGNAL_HallHwy_EastAve_0_0_0_0

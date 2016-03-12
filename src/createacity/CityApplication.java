@@ -47,6 +47,7 @@ import createacity.objects.streetlight.StreetlightUtility;
 import createacity.states.*;
 import de.lessvoid.nifty.Nifty;
 import de.lessvoid.nifty.controls.Controller;
+import de.lessvoid.nifty.controls.Parameters;
 import de.lessvoid.nifty.elements.Element;
 import de.lessvoid.nifty.elements.render.TextRenderer;
 import de.lessvoid.nifty.input.NiftyInputEvent;
@@ -229,8 +230,8 @@ public class CityApplication extends SimpleApplication implements ScreenControll
 
                 rootNode.setShadowMode(RenderQueue.ShadowMode.Off);
                 mainState = new MainState(this);
-                //stateManager.attach(mainState);    
-                //mainState.setEnabled(true);
+                stateManager.attach(mainState);    
+                mainState.setEnabled(true);
                 viewPort.attachScene(rootNode);
             }
         }
@@ -267,7 +268,7 @@ public class CityApplication extends SimpleApplication implements ScreenControll
             bulletAppState = new BulletAppState();
             stateManager.attach(bulletAppState);
             if (CityApplication.DEBUG) {
-                bulletAppState.getPhysicsSpace().enableDebug(assetManager);
+               // bulletAppState.getPhysicsSpace().enableDebug(assetManager);
             }
         
             rawWorld.setName("World");
@@ -288,6 +289,8 @@ public class CityApplication extends SimpleApplication implements ScreenControll
             al.setPosition(new Vector3f(0, 12, 8));
             
             setProgress(0.4f, "Setting up physics");
+            
+            NodeInspector.inspectNode(0, rawWorld);
         
             CollisionShape level_shape = CollisionShapeFactory.createMeshShape(rawWorld);
 
@@ -310,7 +313,7 @@ public class CityApplication extends SimpleApplication implements ScreenControll
             testAI.generateRandomDestination();
 
             if (CityApplication.DEBUG) {
-                bulletAppState.getPhysicsSpace().enableDebug(assetManager);    
+                //bulletAppState.getPhysicsSpace().enableDebug(assetManager);    
             }
                     
             setProgress(1f, "Done loading city");
@@ -407,14 +410,6 @@ public class CityApplication extends SimpleApplication implements ScreenControll
     @Override
     public void onFocus(boolean getFocus) { }
     
-    @Override
-    public void init(Properties prprts, Attributes atrbts) { }
-    
-    @Override
-    public void bind(Nifty nifty, Screen screen, Element elmnt, Properties prprts, Attributes atrbts) {
-        progressBarElement = elmnt.findElementByName("progressbar");
-    }
-    
     public MainState getMainState() {
         return mainState;
     }
@@ -481,5 +476,15 @@ public class CityApplication extends SimpleApplication implements ScreenControll
     
     public Node getVehiclesNode() {
         return vehicles;
+    }
+
+    @Override
+    public void bind(Nifty nifty, Screen screen, Element elmnt, Parameters prmtrs) {
+        progressBarElement = screen.findElementByName("progressbar");
+    }
+
+    @Override
+    public void init(Parameters prmtrs) {
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

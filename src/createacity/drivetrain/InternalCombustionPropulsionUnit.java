@@ -266,7 +266,7 @@ public class InternalCombustionPropulsionUnit extends PropulsionUnit{
         int driveWheels = 0;
         
         for(int i=0;i<vehicleControl.getNumWheels();i++){
-            if(vehicleControl.getWheel(i).getWheelInfo().bIsFrontWheel){
+            if(vehicleControl.getWheel(i).isFrontWheel()){
             totalRadius+=vehicleControl.getWheel(i).getRadius();
             driveWheels++;
             }
@@ -281,7 +281,7 @@ public class InternalCombustionPropulsionUnit extends PropulsionUnit{
     float totalDriveWheelDistance = 0;
     int driveWheels = 0;
         for(int i=0;i<vehicleControl.getNumWheels();i++){
-            if(vehicleControl.getWheel(i).getWheelInfo().bIsFrontWheel){
+            if(vehicleControl.getWheel(i).isFrontWheel()){
             totalDriveWheelDistance+=vehicleControl.getWheel(i).getRadius()*FastMath.TWO_PI;
             driveWheels++;
             }
@@ -295,7 +295,7 @@ public class InternalCombustionPropulsionUnit extends PropulsionUnit{
     float averageDiameter = 0, avgCircumference = 0;
     int driveWheels = 0;
         for(int i=0;i<vehicleControl.getNumWheels();i++){
-            if(vehicleControl.getWheel(i).getWheelInfo().bIsFrontWheel){
+            if(vehicleControl.getWheel(i).isFrontWheel()){
             totalDriveWheelDiameter+=vehicleControl.getWheel(i).getRadius()*2;
             driveWheels++;
             }
