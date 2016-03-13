@@ -26,6 +26,7 @@ import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
 import com.jme3.light.PointLight;
 import com.jme3.math.ColorRGBA;
@@ -72,6 +73,7 @@ public class MainState extends AbstractAppState implements ActionListener {
     protected HashMap<String, IntersectionInfo> intersectionInfoMap;
     
     private DirectionalLight sun;
+    private AmbientLight ambientLight;
     private Vector3f lightDir = new Vector3f(-.5f, -.5f, -.5f); // same as light source
      
     public static final float FLYCAM_SPEED = 50f;
@@ -118,6 +120,10 @@ public class MainState extends AbstractAppState implements ActionListener {
         this.sensors = this.app.getSensors();
         this.sun = this.app.getSun();
         this.vehicles = this.app.getVehiclesNode();
+        
+        ambientLight = new AmbientLight();
+        ambientLight.setColor(ColorRGBA.White.mult(0.05f));
+        rootNode.addLight(ambientLight);
         
         streetlightsOn = false;
         logger.log(Level.INFO, "Finished initializing");
@@ -185,7 +191,9 @@ public class MainState extends AbstractAppState implements ActionListener {
         }
         
         IntersectionInfo intersection = intersectionInfoMap.get("NorthAve_EastAve_1");
-        Integer[] intersectionInt = intersection.getRoadIntersections().get("NorthAve");
+        if (intersection != null) {
+            Integer[] intersectionInt = intersection.getRoadIntersections().get("NorthAve");
+        }
         
         updateMap();
         

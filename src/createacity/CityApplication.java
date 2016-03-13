@@ -261,8 +261,8 @@ public class CityApplication extends SimpleApplication implements ScreenControll
             blenderKey.setLoadObjectProperties(true);
         
             long timer = System.currentTimeMillis();
-            //rawWorld = (Node)assetManager.loadAsset(blenderKey);
-            rawWorld = (Node) assetManager.loadModel("City.j3o");
+            rawWorld = (Node)assetManager.loadAsset(blenderKey);
+            //rawWorld = (Node) assetManager.loadModel("City.j3o");
             logger.log(Level.INFO, "City finished loading in {0} ms", System.currentTimeMillis() - timer);
         
             bulletAppState = new BulletAppState();
@@ -270,9 +270,6 @@ public class CityApplication extends SimpleApplication implements ScreenControll
             if (CityApplication.DEBUG) {
                // bulletAppState.getPhysicsSpace().enableDebug(assetManager);
             }
-        
-            rawWorld.setName("World");
-            rawWorld.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
 
             vehicles = new Node("Vehicles");
             
@@ -283,6 +280,8 @@ public class CityApplication extends SimpleApplication implements ScreenControll
             
             initWorld();
             
+            rawWorld.setName("World");
+            rawWorld.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
             
             al = new PointLight();
             al.setColor(ColorRGBA.White.mult(.1f));
@@ -331,6 +330,10 @@ public class CityApplication extends SimpleApplication implements ScreenControll
         //if (!CityApplication.DEBUG) {
             adjustPhysics();
         //}
+            
+        if (rawWorld.getChildren().size() == 1 && rawWorld.getChild(0).getName().equals("Scene")) {
+            rawWorld = (Node) rawWorld.getChild(0);
+        }
             
         world = NodeInspector.buildNode(rootNode, rawWorld, streetInfoMap, intersectionInfoMap, sensors);
         definedSignalsControlList = DefinedSignalControlUtility.addControls("trafficSignalControls.txt",(Node)world.getChild("Traffic Signals"));
